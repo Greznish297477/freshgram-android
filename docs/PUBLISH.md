@@ -20,24 +20,106 @@ git push -u origin main
 
 ## 2. Добавить секреты репозитория
 
-`Settings → Secrets and variables → Actions → New repository secret`:
+`Settings → Secrets and variables → Actions → New repository secret`
+(имя — ровно как в таблице, значение — без кавычек и без пробелов по краям).
 
 | Секрет | Что это |
 |---|---|
-| `API_ID` / `API_HASH` | с my.telegram.org |
-| `KEYSTORE_JKS` | `base64 -w0 freshgram-release.jks` |
-| `KEYSTORE_PASSWORD` | пароль хранилища |
-| `KEY_ALIAS` | алиас ключа (`freshgram`) |
-| `KEY_PASSWORD` | пароль ключа |
-| `GOOGLE_SERVICES_JSON` | (опц.) `base64 -w0 google-services.json` |
+| `API_ID` | число из my.telegram.org |
+| `API_HASH` | 32 hex-символа из my.telegram.org |
+| `KEYSTORE_JKS` | base64 от `.jks` **одной строкой** |
+| `KEYSTORE_PASSWORD` | пароль хранилища ключей |
+| `KEY_ALIAS` | алиас ключа, для freshGram — `freshgram` |
+| `KEY_PASSWORD` | пароль самого ключа |
+| `GOOGLE_SERVICES_JSON` | (опц.) base64 от `google-services.json` |
 
-Через CLI:
+### 2.1. API_ID и API_HASH
 
-```bash
-base64 -w0 ~/freshgram-release.jks > ks.b64
+1. Откройте <https://my.telegram.org> и войдите по номеру телефона
+   (код придёт в Telegram).
+2. **API development tools** → заполните форму: название приложения
+   (например `freshGram`), short name (`freshgram`), platform — **Android**,
+   URL и описание — можно любые.
+3. На странице появятся **App api_id** (число) и **App api_hash**
+   (32 символа). Это и есть `API_ID` и `API_HASH`.
+
+Нюансы:
+
+- Пара `api_id`/`api_hash` — «личность» приложения для серверов Telegram.
+  Не публикуйте её; при утере можно создать новое приложение.
+- Лучше взять **те же** значения, с которыми собирались APK на машине сборки
+  (они лежат в её `local.properties` в строках `apiId` / `apiHash`).
+  С другим `api_id` приложение тоже работает, но это уже другая «личность»,
+  и пользователям, возможно, придётся войти заново.
+- У одного аккаунта лимит на количество приложений; удалять старые можно там же.
+
+### 2.2. Ключ подписи (`.jks`)
+
+Готовые APK в `dist/` подписаны ключом, под который уже настроен анти-тампер.
+Его сертификат:
+
+```
+Owner:  CN=freshGram, OU=freshGram, O=freshGram, L=Local, ST=Local, C=US
+Serial: c57b671652e35232
+SHA256: 27:16:BC:1C:DB:AA:D0:D2:FB:9E:7D:FE:21:87:70:9C:36:5F:2C:6F:4B:CF:36:44:EE:D0:BB:C7:F0:51:9E:5B
+```
+
+**Ищите существующий `.jks`** на машине, где собирались релизы
+(по `HANDOFF.md` — `~/freshgram-release.jks`, alias `freshgram`).
+Пароли — в её `local.properties` (`storePassword`, `keyPassword`).
+
+Проверка ключа на Windows (размер и CRC32 сертификата должны совпасть с
+`CERT_SIZE 0x57c` / `CERT_HASH 0xcc88ad67` в
+`TMessagesProj/jni/colorado/colorado.h`):
+
+```powershell
+.\tools\keystore-check.ps1 -Keystore C:\keys\freshgram-release.jks -Alias freshgram -CopyToClipboard
+```
+
+Скрипт печатает сертификат, сверяет его с `colorado.h` и **кладёт base64
+в буфер обмена** — остаётся вставить в поле `KEYSTORE_JKS`.
+
+base64 вручную:
+
+```powershell
+[Convert]::ToBase64String([IO.File]::ReadAllBytes("C:\keys\freshgram-release.jks")) | Set-Clipboard
+```
+
+**Если ключ потерян**, его нельзя восстановить (приватный ключ нигде больше
+не хранится). Тогда:
+
+```powershell
+keytool -genkeypair -v -keystore freshgram-release.jks -alias freshgram `
+  -keyalg RSA -keysize 2048 -validity 10000 `
+  -dname "CN=freshGram, OU=freshGram, O=freshGram, L=Local, ST=Local, C=US"
+```
+
+и **обязательно** пересчитать константы — скрипт выше покажет готовые строки:
+
+```c
+#define CERT_HASH 0x........
+#define CERT_SIZE 0x...
+```
+
+Последствия нового ключа: уже установленное приложение нельзя обновить
+поверх (Android отклонит APK с другой подписью) — нужна переустановка;
+пользователи обновятся, только если удалят старую версию.
+
+### 2.3. Пароли и alias
+
+- `KEY_ALIAS` — имя ключа внутри хранилища. Для freshGram — `freshgram`
+  (посмотреть: `keytool -list -keystore file.jks`).
+- `KEYSTORE_PASSWORD` — пароль файла `.jks`
+  (`keytool -list` спрашивает именно его).
+- `KEY_PASSWORD` — пароль приватного ключа; при `-genkeypair` часто совпадает
+  с паролем хранилища, но это не обязательно.
+
+Через GitHub CLI:
+
+```powershell
 gh secret set API_ID --body "12345"
 gh secret set API_HASH --body "0123456789abcdef0123456789abcdef"
-gh secret set KEYSTORE_JKS < ks.b64
+Get-Content ks.b64 | gh secret set KEYSTORE_JKS
 gh secret set KEYSTORE_PASSWORD --body "***"
 gh secret set KEY_ALIAS --body "freshgram"
 gh secret set KEY_PASSWORD --body "***"
@@ -46,6 +128,7 @@ gh secret set KEY_PASSWORD --body "***"
 > **Важно:** подпись привязана к анти-тамперу
 > `TMessagesProj/jni/colorado/colorado.h`. Workflow намеренно падает, если
 > `KEYSTORE_JKS` не задан, — debug-подпись привела бы к SIGKILL при старте.
+> Секреты после сохранения прочитать нельзя, можно только заменить.
 
 ## 3. Залить workflow и выпустить релиз
 

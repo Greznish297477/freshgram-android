@@ -66,6 +66,18 @@ function Invoke-Keytool {
 }
 
 $storePassArgs = @()
+if (-not $StorePassword) {
+    # Спрашиваем один раз: без этого keytool запрашивал бы пароль на каждый вызов.
+    $secure = Read-Host -AsSecureString "Пароль хранилища $([System.IO.Path]::GetFileName($Keystore))"
+    if ($secure.Length -gt 0) {
+        $bstr = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure)
+        try {
+            $StorePassword = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr)
+        } finally {
+            [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
+        }
+    }
+}
 if ($StorePassword) { $storePassArgs = @('-storepass', $StorePassword) }
 
 # --- 1. сертификат ------------------------------------------------------------

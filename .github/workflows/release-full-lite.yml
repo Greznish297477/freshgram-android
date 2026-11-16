@@ -44,6 +44,9 @@ jobs:
         with:
           submodules: 'recursive'
 
+      - name: Make gradlew executable
+        run: chmod +x gradlew build-versions.sh
+
       - name: Set up JDK 25
         uses: actions/setup-java@v4
         with:

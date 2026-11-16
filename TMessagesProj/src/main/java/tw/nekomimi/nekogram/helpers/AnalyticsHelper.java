@@ -33,7 +33,7 @@ public class AnalyticsHelper {
 
     public static void start(Application application) {
         preferences = application.getSharedPreferences("nekoanalytics", Application.MODE_PRIVATE);
-        analyticsDisabled = !Extra.FORCE_ANALYTICS && preferences.getBoolean("analyticsDisabled", false);
+        analyticsDisabled = !Extra.FORCE_ANALYTICS && preferences.getBoolean("analyticsDisabled", true);
         sendBugReport = Extra.FORCE_ANALYTICS || preferences.getBoolean("sendBugReport", true);
         if (analyticsDisabled) {
             FileLog.d("Analytics: userId = disabled");
@@ -43,22 +43,34 @@ public class AnalyticsHelper {
         if (userId == null || userId.length() < 32) {
             preferences.edit().putString("userId", userId = generateUserID()).apply();
         }
-        firebaseAnalytics = FirebaseAnalytics.getInstance(application);
-        firebaseAnalytics.setAnalyticsCollectionEnabled(true);
-        firebaseAnalytics.setUserId(userId);
-        SentryAndroid.init(application, options -> {
-            options.setDsn(Extra.SENTRY_DSN);
-            options.setEnvironment(BuildConfig.BUILD_TYPE);
-            options.setPrintUncaughtStackTrace(true);
-            options.getDataCollection().forceDataCollection();
-            options.setEnableUserInteractionTracing(true);
-            options.setAttachViewHierarchy(true);
-            options.setEnableSystemEventBreadcrumbsExtras(true);
-            options.setTracesSampleRate(0.01);
-        });
-        var user = new User();
-        user.setId(userId);
-        Sentry.setUser(user);
+        try {
+            firebaseAnalytics = FirebaseAnalytics.getInstance(application);
+            firebaseAnalytics.setAnalyticsCollectionEnabled(true);
+            firebaseAnalytics.setUserId(userId);
+        } catch (Throwable t) {
+            // Без google-services.json Firebase не инициализируется — это не повод падать.
+            firebaseAnalytics = null;
+            FileLog.e("Failed to init FirebaseAnalytics", t);
+        }
+        if (Extra.SENTRY_DSN != null && !Extra.SENTRY_DSN.trim().isEmpty()) {
+            try {
+                SentryAndroid.init(application, options -> {
+                    options.setDsn(Extra.SENTRY_DSN);
+                    options.setEnvironment(BuildConfig.BUILD_TYPE);
+                    options.setPrintUncaughtStackTrace(true);
+                    options.getDataCollection().forceDataCollection();
+                    options.setEnableUserInteractionTracing(true);
+                    options.setAttachViewHierarchy(true);
+                    options.setEnableSystemEventBreadcrumbsExtras(true);
+                    options.setTracesSampleRate(0.01);
+                });
+                var user = new User();
+                user.setId(userId);
+                Sentry.setUser(user);
+            } catch (Throwable t) {
+                FileLog.e("Failed to init Sentry", t);
+            }
+        }
 
         if (BuildVars.LOGS_ENABLED) {
             FileLog.d("Analytics: userId = " + userId);
@@ -75,7 +87,7 @@ public class AnalyticsHelper {
     }
 
     public static void trackFragmentLifecycle(String lifecycle, BaseFragment fragment) {
-        if (analyticsDisabled || fragment == null) return;
+        if (analyticsDisabled || firebaseAnalytics == null || fragment == null) return;
         var breadcrumb = new Breadcrumb();
         breadcrumb.setType("navigation");
         breadcrumb.setCategory("ui.fragment.lifecycle");
@@ -94,7 +106,7 @@ public class AnalyticsHelper {
     }
 
     public static void trackEvent(String event, HashMap<String, String> map) {
-        if (analyticsDisabled) return;
+        if (analyticsDisabled || firebaseAnalytics == null) return;
         Bundle bundle = new Bundle();
         for (String key : map.keySet()) {
             bundle.putString(key, map.get(key));

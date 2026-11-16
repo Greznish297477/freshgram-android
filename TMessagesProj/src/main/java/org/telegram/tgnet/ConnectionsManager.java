@@ -1182,6 +1182,29 @@ public class ConnectionsManager extends BaseController {
             ByteArrayOutputStream outbuf = null;
             InputStream httpConnectionStream = null;
             boolean done = false;
+            if (tw.nekomimi.nekogram.NekoConfig.useSystemDns) {
+                try {
+                    InetAddress[] address = InetAddress.getAllByName(currentHostName);
+                    ArrayList<Pair<String, Boolean>> resolvedAddresses = new ArrayList<>(address.length);
+                    final boolean ipv4Only = tw.nekomimi.nekogram.NekoConfig.useIpv4Fetch;
+                    for (InetAddress a : address) {
+                        if (ipv4Only && !(a instanceof Inet4Address)) {
+                            continue;
+                        }
+                        resolvedAddresses.add(Pair.create(a.getHostAddress(), a instanceof Inet6Address));
+                    }
+                    if (resolvedAddresses.isEmpty()) {
+                        // fall back to a regular resolution
+                        for (InetAddress a : address) {
+                            resolvedAddresses.add(Pair.create(a.getHostAddress(), a instanceof Inet6Address));
+                        }
+                    }
+                    return new ResolvedDomain(resolvedAddresses, SystemClock.elapsedRealtime());
+                } catch (Exception e) {
+                    FileLog.e(e, false);
+                    return null;
+                }
+            }
             try {
                 URL downloadUrl = new URL("https://www.google.com/resolve?name=" + currentHostName + "&type=A");
                 URLConnection httpConnection = downloadUrl.openConnection();

@@ -140,6 +140,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import tw.nekomimi.nekogram.NekoConfig;
+import tw.nekomimi.nekogram.helpers.EditHistoryHelper;
 import me.vkryl.core.BitwiseUtils;
 
 public class MessagesController extends BaseController implements NotificationCenter.NotificationCenterDelegate {
@@ -405,6 +406,7 @@ public class MessagesController extends BaseController implements NotificationCe
     private int statusRequest;
     private int statusSettingState;
     private boolean offlineSent;
+    private long peekLastSeenUntil;
     private String uploadingAvatar;
     private final LongSparseArray<ArrayList<MessageObject>> welcomeMessages = new LongSparseArray<>();
 
@@ -1525,6 +1527,30 @@ public class MessagesController extends BaseController implements NotificationCe
         return localInstance;
     }
 
+    /** freshGram: количество активных авторизаций (устройств), 0 если ещё не загружено. */
+    public volatile int deviceSessionsCount;
+    private int deviceSessionsRequestId = -1;
+
+    /** freshGram: загружает количество подключённых устройств и уведомляет UI. */
+    public void loadDeviceSessionsCount() {
+        if (deviceSessionsRequestId >= 0) {
+            return;
+        }
+        TL_account.getAuthorizations req = new TL_account.getAuthorizations();
+        deviceSessionsRequestId = getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
+            deviceSessionsRequestId = -1;
+            if (error != null || !(response instanceof TL_account.authorizations)) {
+                return;
+            }
+            TL_account.authorizations res = (TL_account.authorizations) response;
+            int count = res.authorizations.size();
+            if (count != deviceSessionsCount) {
+                deviceSessionsCount = count;
+                NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.updateInterfaces, UPDATE_MASK_ALL);
+            }
+        }));
+    }
+
     public SharedPreferences getMainSettings() {
         return mainPreferences;
     }
@@ -1585,7 +1611,7 @@ public class MessagesController extends BaseController implements NotificationCe
         maxGroupCount = mainPreferences.getInt("maxGroupCount", 200);
         maxMegagroupCount = mainPreferences.getInt("maxMegagroupCount", 10000);
         maxRecentGifsCount = mainPreferences.getInt("maxRecentGifsCount", 200);
-        maxRecentStickersCount = mainPreferences.getInt("maxRecentStickersCount", 30);
+        maxRecentStickersCount = mainPreferences.getInt("maxRecentStickersCount", 200);
         maxFaveStickersCount = mainPreferences.getInt("maxFaveStickersCount", 5);
         maxEditTime = mainPreferences.getInt("maxEditTime", 3600);
         ratingDecay = mainPreferences.getInt("ratingDecay", 2419200);
@@ -5674,7 +5700,7 @@ public class MessagesController extends BaseController implements NotificationCe
             maxEditTime = config.edit_time_limit;
             ratingDecay = config.rating_e_decay;
 //            maxRecentGifsCount = config.saved_gifs_limit;
-            maxRecentStickersCount = config.stickers_recent_limit;
+            maxRecentStickersCount = Math.max(config.stickers_recent_limit, 200);
 //            maxFaveStickersCount = config.stickers_faved_limit;
             revokeTimeLimit = config.revoke_time_limit;
             revokeTimePmLimit = config.revoke_pm_time_limit;
@@ -9302,6 +9328,51 @@ public class MessagesController extends BaseController implements NotificationCe
         }
     }
 
+    /** freshGram/AyuGram: delete for everyone on the server, but keep the messages locally. */
+    public void deleteMessagesKeepLocally(ArrayList<Integer> messages, long dialogId, int topicId, boolean forAll) {
+        if (messages == null || messages.isEmpty()) {
+            return;
+        }
+        long channelId;
+        if (dialogId != 0 && DialogObject.isChatDialog(dialogId)) {
+            TLRPC.Chat chat = getChat(-dialogId);
+            channelId = ChatObject.isChannel(chat) ? chat.id : 0;
+        } else {
+            channelId = 0;
+        }
+        ArrayList<Integer> toSend = new ArrayList<>();
+        for (int a = 0, N = messages.size(); a < N; a++) {
+            Integer mid = messages.get(a);
+            if (mid != null && mid > 0) {
+                toSend.add(mid);
+            }
+        }
+        if (toSend.isEmpty()) {
+            return;
+        }
+        if (channelId != 0) {
+            TLRPC.TL_channels_deleteMessages req = new TLRPC.TL_channels_deleteMessages();
+            req.id = toSend;
+            req.channel = getInputChannel(channelId);
+            getConnectionsManager().sendRequest(req, (response, error) -> {
+                if (error == null && response instanceof TLRPC.TL_messages_affectedMessages) {
+                    TLRPC.TL_messages_affectedMessages res = (TLRPC.TL_messages_affectedMessages) response;
+                    processNewChannelDifferenceParams(res.pts, res.pts_count, channelId);
+                }
+            });
+        } else {
+            TLRPC.TL_messages_deleteMessages req = new TLRPC.TL_messages_deleteMessages();
+            req.id = toSend;
+            req.revoke = forAll;
+            getConnectionsManager().sendRequest(req, (response, error) -> {
+                if (error == null && response instanceof TLRPC.TL_messages_affectedMessages) {
+                    TLRPC.TL_messages_affectedMessages res = (TLRPC.TL_messages_affectedMessages) response;
+                    processNewDifferenceParams(-1, res.pts, -1, res.pts_count);
+                }
+            });
+        }
+    }
+
     public void deleteMessages(ArrayList<Integer> messages, ArrayList<Long> randoms, TLRPC.EncryptedChat encryptedChat, long dialogId, int topicId, boolean forAll, int mode) {
         deleteMessages(messages, randoms, encryptedChat, dialogId, forAll, mode, false, 0, null, topicId);
     }
@@ -10099,10 +10170,15 @@ public class MessagesController extends BaseController implements NotificationCe
             if (did == getUserConfig().getClientUserId()) {
                 getSavedMessagesController().deleteAllDialogs();
             }
-            getMessagesStorage().deleteDialog(did, onlyHistory);
+            boolean keepDeleted = tw.nekomimi.nekogram.NekoConfig.keepDeletedDialogs && (onlyHistory == 0);
+            if (!keepDeleted) {
+                getMessagesStorage().deleteDialog(did, onlyHistory);
+            }
             TLRPC.Dialog dialog = dialogs_dict.get(did);
             if (onlyHistory == 0 || onlyHistory == 3) {
-                getNotificationCenter().postNotificationName(NotificationCenter.dialogDeleted, did, 0);
+                if (!keepDeleted) {
+                    getNotificationCenter().postNotificationName(NotificationCenter.dialogDeleted, did, 0);
+                }
                 getNotificationsController().deleteNotificationChannel(did, 0);
                 JoinCallAlert.processDeletedChat(currentAccount, did);
             }
@@ -10515,6 +10591,18 @@ public class MessagesController extends BaseController implements NotificationCe
         });
     }
 
+    /**
+     * Temporarily goes online to fetch accurate "last seen" timestamps of other users
+     * (AyuGram "peek last seen"). The presence is restored to hidden right after.
+     */
+    public void peekLastSeenFor(int seconds) {
+        peekLastSeenUntil = System.currentTimeMillis() + seconds * 1000L;
+        lastStatusUpdateTime = 0;
+        offlineSent = false;
+        statusSettingState = 0;
+        AndroidUtilities.runOnUIThread(this::updateTimerProc, 250);
+    }
+
     public void updateTimerProc() {
         if (!getUserConfig().isClientActivated()) return;
         long currentTime = System.currentTimeMillis();
@@ -10523,7 +10611,9 @@ public class MessagesController extends BaseController implements NotificationCe
         checkReadTasks();
 
         if (getUserConfig().isClientActivated() && !getUserConfig().getCurrentUser().bot) {
-            if (!ignoreSetOnline && getConnectionsManager().getPauseTime() == 0 && ApplicationLoader.isScreenOn && !ApplicationLoader.mainInterfacePausedStageQueue) {
+            boolean ghostMode = tw.nekomimi.nekogram.NekoConfig.ghostMode;
+            boolean peekLastSeenActive = peekLastSeenUntil > currentTime;
+            if ((!ghostMode || peekLastSeenActive) && !ignoreSetOnline && getConnectionsManager().getPauseTime() == 0 && ApplicationLoader.isScreenOn && !ApplicationLoader.mainInterfacePausedStageQueue) {
                 if (ApplicationLoader.mainInterfacePausedStageQueueTime != 0 && Math.abs(ApplicationLoader.mainInterfacePausedStageQueueTime - System.currentTimeMillis()) > 1000) {
                     if (statusSettingState != 1 && (lastStatusUpdateTime == 0 || Math.abs(System.currentTimeMillis() - lastStatusUpdateTime) >= 55000 || offlineSent)) {
                         statusSettingState = 1;
@@ -10548,7 +10638,7 @@ public class MessagesController extends BaseController implements NotificationCe
                         });
                     }
                 }
-            } else if (statusSettingState != 2 && !offlineSent && Math.abs(System.currentTimeMillis() - getConnectionsManager().getPauseTime()) >= 2000) {
+            } else if (!ghostMode && statusSettingState != 2 && !offlineSent && Math.abs(System.currentTimeMillis() - getConnectionsManager().getPauseTime()) >= 2000) {
                 statusSettingState = 2;
                 if (statusRequest != 0) {
                     getConnectionsManager().cancelRequest(statusRequest, true);
@@ -11387,6 +11477,10 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     public boolean sendTyping(long dialogId, long threadMsgId, int action, String emojicon, int classGuid) {
+        if (tw.nekomimi.nekogram.NekoConfig.ghostMode) {
+            // Режим призрака: не отправляем статус набора.
+            return false;
+        }
         if (action < 0 || action >= sendingTypings.length || dialogId == 0) {
             return false;
         }
@@ -14565,6 +14659,10 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     private void completeReadTask(ReadTask task) {
+        if (tw.nekomimi.nekogram.NekoConfig.ghostMode) {
+            // Режим призрака: не отправляем серверу подтверждение прочтения.
+            return;
+        }
         if (task.replyId != 0 && task.monoForumPeerId == 0) {
             TLRPC.TL_messages_readDiscussion req = new TLRPC.TL_messages_readDiscussion();
             req.msg_id = (int) task.replyId;
@@ -19519,6 +19617,25 @@ public class MessagesController extends BaseController implements NotificationCe
 
                 MessageObject.getDialogId(message);
 
+                if (NekoConfig.keepEditHistory) {
+                    try {
+                        final long editDialogId = message.dialog_id;
+                        final int editMessageId = message.id;
+                        final String newText = message.message;
+                        getMessagesStorage().getMessageAsync(editDialogId, editMessageId, oldMessage -> {
+                            try {
+                                if (oldMessage != null && oldMessage.message != null && !oldMessage.message.equals(newText)) {
+                                    EditHistoryHelper.recordEdit(editDialogId, editMessageId, oldMessage.message, oldMessage.date, oldMessage.edit_date);
+                                }
+                            } catch (Throwable e) {
+                                FileLog.e(e);
+                            }
+                        });
+                    } catch (Throwable e) {
+                        FileLog.e(e);
+                    }
+                }
+
                 ConcurrentHashMap<Long, Integer> read_max = message.out ? dialogs_read_outbox_max : dialogs_read_inbox_max;
                 Integer value = read_max.get(message.dialog_id);
                 if (value == null) {
@@ -21159,10 +21276,15 @@ public class MessagesController extends BaseController implements NotificationCe
                 }
             }
             if (deletedMessagesFinal != null) {
+                boolean antiRecall = tw.nekomimi.nekogram.NekoConfig.antiRecall;
                 for (int a = 0, size = deletedMessagesFinal.size(); a < size; a++) {
                     long dialogId = deletedMessagesFinal.keyAt(a);
                     ArrayList<Integer> arrayList = deletedMessagesFinal.valueAt(a);
                     if (arrayList == null) {
+                        continue;
+                    }
+                    if (antiRecall) {
+                        // Anti-recall: оставляем сообщения видимыми, не помечаем удалёнными.
                         continue;
                     }
                     getNotificationCenter().postNotificationName(NotificationCenter.messagesDeleted, arrayList, -dialogId, false);
@@ -21279,9 +21401,14 @@ public class MessagesController extends BaseController implements NotificationCe
             }
         }
         if (deletedMessages != null) {
+            boolean antiRecall = tw.nekomimi.nekogram.NekoConfig.antiRecall;
             for (int a = 0, size = deletedMessages.size(); a < size; a++) {
                 long key = deletedMessages.keyAt(a);
                 ArrayList<Integer> arrayList = deletedMessages.valueAt(a);
+                if (antiRecall) {
+                    // Anti-recall: не удаляем сообщения из локальной БД.
+                    continue;
+                }
                 getMessagesStorage().getStorageQueue().postRunnable(() -> {
                     ArrayList<Long> dialogIds = getMessagesStorage().markMessagesAsDeleted(key, arrayList, false, true, 0, 0);
                     getMessagesStorage().updateDialogsWithDeletedMessages(key, -key, arrayList, dialogIds);

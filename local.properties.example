@@ -1,0 +1,9 @@
+# скопировать в local.properties (не коммитить)
+apiId=0
+apiHash=00000000000000000000000000000000
+
+# подпись релиза (опционально; без неё CI соберёт debug-подписанный APK)
+storeFile=/absolute/path/release.keystore
+storePassword=
+keyAlias=
+keyPassword=

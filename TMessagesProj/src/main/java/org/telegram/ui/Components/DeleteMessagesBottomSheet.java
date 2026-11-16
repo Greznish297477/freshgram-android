@@ -1117,11 +1117,13 @@ public class DeleteMessagesBottomSheet extends BottomSheetWithRecyclerListView {
                 });
             }
         } else {
-            if (!supergroupMessageIds.isEmpty()) {
-                MessagesController.getInstance(currentAccount).deleteMessages(supergroupMessageIds, null, null, -inChat.id, topicId, false, mode);
+            for (int i = 0; i < supergroupMessageIds.size(); i += 100) {
+                ArrayList<Integer> chunk = new ArrayList<>(supergroupMessageIds.subList(i, Math.min(i + 100, supergroupMessageIds.size())));
+                MessagesController.getInstance(currentAccount).deleteMessages(chunk, null, null, -inChat.id, topicId, false, mode);
             }
-            if (!groupMessageIds.isEmpty()) {
-                MessagesController.getInstance(currentAccount).deleteMessages(groupMessageIds, null, null, mergeDialogId, topicId, true, mode);
+            for (int i = 0; i < groupMessageIds.size(); i += 100) {
+                ArrayList<Integer> chunk = new ArrayList<>(groupMessageIds.subList(i, Math.min(i + 100, groupMessageIds.size())));
+                MessagesController.getInstance(currentAccount).deleteMessages(chunk, null, null, mergeDialogId, topicId, true, mode);
             }
         }
 

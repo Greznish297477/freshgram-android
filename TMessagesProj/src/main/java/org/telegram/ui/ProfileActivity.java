@@ -2143,6 +2143,16 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         }
         if (userId != 0) {
             dialogId = arguments.getLong("dialog_id", 0);
+            if (tw.nekomimi.nekogram.NekoConfig.peekLastSeen && userId != UserConfig.getInstance(currentAccount).getClientUserId()) {
+                getMessagesController().peekLastSeenFor(30);
+                final long peekUserId = userId;
+                AndroidUtilities.runOnUIThread(() -> {
+                    TLRPC.User peekUser = getMessagesController().getUser(peekUserId);
+                    if (peekUser != null) {
+                        getMessagesController().loadFullUser(peekUser, classGuid, true);
+                    }
+                }, 1200);
+            }
             if (dialogId != 0) {
                 currentEncryptedChat = getMessagesController().getEncryptedChat(DialogObject.getEncryptedChatId(dialogId));
             }
@@ -13858,7 +13868,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         TLRPC.User user = UserConfig.getInstance(currentAccount).getCurrentUser();
                         String value;
                         if (user != null && user.phone != null && user.phone.length() != 0) {
-                            value = PhoneFormat.getInstance().format("+" + user.phone);
+                            value = tw.nekomimi.nekogram.NekoConfig.streamerMode ? "+••• ••• •• ••" : PhoneFormat.getInstance().format("+" + user.phone);
                         } else {
                             value = LocaleController.getString(R.string.NumberUnknown);
                         }

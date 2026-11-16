@@ -13,6 +13,7 @@ import android.text.Spanned;
 import android.text.style.LeadingMarginSpan;
 
 import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
@@ -124,6 +125,12 @@ public class TypefaceHelper {
     }
 
     public static Typeface createTypeface(int weight, boolean italic) {
+        if (NekoConfig.fontFamily != NekoConfig.FONT_FAMILY_SYSTEM) {
+            Typeface custom = getCustomTypeface(weight, italic);
+            if (custom != null) {
+                return custom;
+            }
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             return Typeface.create(null, weight, italic);
         }
@@ -133,6 +140,35 @@ public class TypefaceHelper {
             default -> "sans-serif";
         };
         return Typeface.create(family, italic ? Typeface.ITALIC : Typeface.NORMAL);
+    }
+
+    private static Typeface customRegular;
+    private static Typeface customMedium;
+
+    private static Typeface getCustomTypeface(int weight, boolean italic) {
+        if (italic) {
+            return null;
+        }
+        boolean medium = weight >= 500;
+        Typeface cached = medium ? customMedium : customRegular;
+        if (cached != null) {
+            return cached;
+        }
+        String asset = medium
+                ? (NekoConfig.fontFamily == NekoConfig.FONT_FAMILY_VAZIRMATN ? "fonts/Vazirmatn-UI-NL-SemiBold.ttf" : "fonts/GoogleSansFlexMedium.ttf")
+                : (NekoConfig.fontFamily == NekoConfig.FONT_FAMILY_VAZIRMATN ? "fonts/Vazirmatn-UI-NL-Regular.ttf" : "fonts/GoogleSansFlexRegular.ttf");
+        try {
+            Typeface tf = Typeface.createFromAsset(ApplicationLoader.applicationContext.getAssets(), asset);
+            if (medium) {
+                customMedium = tf;
+            } else {
+                customRegular = tf;
+            }
+            return tf;
+        } catch (Throwable t) {
+            FileLog.e("Failed to load custom typeface " + asset, t);
+            return null;
+        }
     }
 
     public static boolean isMediumWeightSupported() {

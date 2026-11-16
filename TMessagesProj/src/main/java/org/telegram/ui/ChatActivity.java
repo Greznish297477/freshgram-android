@@ -105,6 +105,7 @@ import android.widget.FrameLayout;
 import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.Space;
 import android.widget.TextView;
 
@@ -345,6 +346,7 @@ import tw.nekomimi.nekogram.forward.ForwardItem;
 import tw.nekomimi.nekogram.forward.ForwardPopupWrapper;
 import tw.nekomimi.nekogram.MessageDetailsActivity;
 import tw.nekomimi.nekogram.NekoConfig;
+import tw.nekomimi.nekogram.helpers.EditHistoryHelper;
 import tw.nekomimi.nekogram.helpers.MessageHelper;
 import tw.nekomimi.nekogram.helpers.QrHelper;
 import tw.nekomimi.nekogram.helpers.EmojiHelper;
@@ -1301,6 +1303,8 @@ public class ChatActivity extends BaseFragment implements
     public final static int OPTION_VIEW_STATISTICS = 115;
     public final static int OPTION_WELCOME_REVERT = 116;
     public final static int OPTION_SEND_MONEY = 117;
+    public final static int OPTION_EDIT_HISTORY = 118;
+    public final static int OPTION_COPY_MESSAGE_ID = 119;
 
     private final static int[] allowedNotificationsDuringChatListAnimations = new int[]{
             NotificationCenter.messagesRead,
@@ -1702,6 +1706,8 @@ public class ChatActivity extends BaseFragment implements
     private final static int show_pinned = 90;
     private final static int delete_history = 91;
     private final static int recent_actions = 92;
+    private final static int deleted_messages_menu = 93;
+    private final static int delete_last_n = 94;
 
     private final static int bot_help = 30;
     private final static int bot_settings = 31;
@@ -1840,7 +1846,7 @@ public class ChatActivity extends BaseFragment implements
                         return;
                     }
                     if (messageObject.contentType == 0) {
-                        if (selected && selectedMessagesIds[0].size() + selectedMessagesIds[1].size() >= 100) {
+                        if (selected && !NekoConfig.unlimitedSelection && selectedMessagesIds[0].size() + selectedMessagesIds[1].size() >= 100) {
                             limitReached = true;
                         } else {
                             limitReached = false;
@@ -4242,6 +4248,10 @@ public class ChatActivity extends BaseFragment implements
                     SharedPreferences preferences = MessagesController.getNotificationsSettings(currentAccount);
                     preferences.edit().putInt("pin_" + dialog_id, 0).commit();
                     updatePinnedMessageView(true);
+                } else if (id == deleted_messages_menu) {
+                    showDeletedMessages();
+                } else if (id == delete_last_n) {
+                    showDeleteLastNMessagesDialog();
                 } else if (id == recent_actions) {
                     presentFragment(new ChannelAdminLogActivity(currentChat));
                 } else if (id == topic_close) {
@@ -4679,6 +4689,10 @@ public class ChatActivity extends BaseFragment implements
             }
             if (currentChat != null && ((ChatObject.isMegagroup(currentChat) && !ChatObject.isMonoForum(currentChat)) || !ChatObject.isChannel(currentChat))) {
                 headerItem.lazilyAddSubItem(delete_history, R.drawable.msg_delete, LocaleController.getString(R.string.DeleteAllFromSelf));
+            }
+            if (ChatActivity.this.dialog_id != 0) {
+                headerItem.lazilyAddSubItem(deleted_messages_menu, R.drawable.msg_log, LocaleController.getString(R.string.DeletedMessagesMenu));
+                headerItem.lazilyAddSubItem(delete_last_n, R.drawable.msg_delete, LocaleController.getString(R.string.DeleteLastNMessages));
             }
             boolean addedSettings = false;
             if (!isTopic) {
@@ -10677,7 +10691,7 @@ public class ChatActivity extends BaseFragment implements
             }
             actionModeViews.add(actionMode.addItemWithWidth(star, R.drawable.msg_fave, dp(48), LocaleController.getString(R.string.AddToFavorites)));
             actionModeViews.add(actionMode.addItemWithWidth(copy, R.drawable.msg_copy, dp(48), LocaleController.getString(R.string.Copy)));
-            if (!isSavedMessages && getDialogId() != UserObject.VERIFY) {
+            if (!isSavedMessages && getDialogId() != UserObject.VERIFY && !NekoConfig.hideForwardButton) {
                 actionModeViews.add(actionMode.addItemWithWidth(forward, R.drawable.msg_forward, dp(48), LocaleController.getString(R.string.Forward)));
                 if (NekoConfig.showNoQuoteForward) actionModeViews.add(actionMode.addItemWithWidth(ForwardItem.ID_FORWARD_NOQUOTE, R.drawable.msg_forward, dp(48), LocaleController.getString(R.string.NoQuoteForward)));
             }
@@ -19815,7 +19829,7 @@ public class ChatActivity extends BaseFragment implements
                     }
                 }
             } else {
-                if (selectedMessagesIds[0].size() + selectedMessagesIds[1].size() >= 100) {
+                if (!NekoConfig.unlimitedSelection && selectedMessagesIds[0].size() + selectedMessagesIds[1].size() >= 100) {
                     AndroidUtilities.shakeView(selectedMessagesCountTextView);
                     Vibrator vibrator = (Vibrator) ApplicationLoader.applicationContext.getSystemService(Context.VIBRATOR_SERVICE);
                     if (vibrator != null) {
@@ -25707,7 +25721,7 @@ public class ChatActivity extends BaseFragment implements
     private Pattern sponsoredUrlPattern;
     private MessageObject botSponsoredMessage;
     private void addSponsoredMessages(boolean animated) {
-        if (sponsoredMessagesAdded || chatMode != 0 || !ChatObject.isChannel(currentChat) && !UserObject.isBot(currentUser) || !forwardEndReached[0] || getUserConfig().isPremium() && getMessagesController().isSponsoredDisabled() || isReport()) {
+        if (sponsoredMessagesAdded || chatMode != 0 || !ChatObject.isChannel(currentChat) && !UserObject.isBot(currentUser) || !forwardEndReached[0] || getUserConfig().isPremium() && getMessagesController().isSponsoredDisabled() || isReport() || NekoConfig.hideSponsoredMessages) {
             return;
         }
         MessagesController.SponsoredMessagesInfo res = getMessagesController().getSponsoredMessages(dialog_id);
@@ -34188,6 +34202,203 @@ public class ChatActivity extends BaseFragment implements
         });
     }
 
+    private void showDeleteLastNMessagesDialog() {
+        if (getParentActivity() == null) {
+            return;
+        }
+        final EditText input = new EditText(getParentActivity());
+        input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+        input.setGravity(Gravity.CENTER);
+        input.setTextSize(18);
+        input.setTextColor(Theme.getColor(Theme.key_dialogTextBlack, themeDelegate));
+        input.setText("10");
+        input.setSelection(input.getText().length());
+        input.setPadding(AndroidUtilities.dp(18), AndroidUtilities.dp(6), AndroidUtilities.dp(18), AndroidUtilities.dp(6));
+
+        final CheckBoxCell keepCell = new CheckBoxCell(getParentActivity(), 1, themeDelegate);
+        keepCell.setText(LocaleController.getString(R.string.DeleteForAllKeepLocal), "", false, false);
+        keepCell.setPadding(AndroidUtilities.dp(8), AndroidUtilities.dp(6), AndroidUtilities.dp(8), AndroidUtilities.dp(6));
+        keepCell.setChecked(false, false);
+        keepCell.setOnClickListener(v -> keepCell.setChecked(!keepCell.isChecked(), true));
+
+        final LinearLayout container = new LinearLayout(getParentActivity());
+        container.setOrientation(LinearLayout.VERTICAL);
+        container.addView(input, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
+        if (!org.telegram.messenger.BuildVars.LITE) {
+            container.addView(keepCell, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
+        }
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity(), themeDelegate);
+        builder.setTitle(LocaleController.getString(R.string.DeleteLastNMessages));
+        builder.setView(container);
+        builder.setPositiveButton(LocaleController.getString(R.string.Delete), (dialog, which) -> {
+            int n;
+            try {
+                n = Integer.parseInt(input.getText().toString().trim());
+            } catch (Exception e) {
+                return;
+            }
+            if (n <= 0 || n > 1000) {
+                return;
+            }
+            deleteLastNMessages(n, !org.telegram.messenger.BuildVars.LITE && keepCell.isChecked());
+        });
+        builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
+        showDialog(builder.create());
+    }
+
+    private void deleteLastNMessages(int n) {
+        deleteLastNMessages(n, false);
+    }
+
+    private void deleteLastNMessages(int n, boolean keepLocally) {
+        if (n <= 0) {
+            return;
+        }
+        ArrayList<Integer> ids = new ArrayList<>();
+        for (int i = messages.size() - 1; i >= 0 && ids.size() < n; i--) {
+            MessageObject m = messages.get(i);
+            if (m == null || m.isDateObject || m.getId() <= 0 || m.isSponsored()) {
+                continue;
+            }
+            ids.add(m.getId());
+        }
+        if (!ids.isEmpty()) {
+            if (keepLocally) {
+                getMessagesController().deleteMessagesKeepLocally(ids, dialog_id, (int) threadMessageId, true);
+            } else {
+                getMessagesController().deleteMessages(ids, null, null, dialog_id, (int) threadMessageId, false, chatMode);
+            }
+        }
+    }
+
+    private void showDeletedMessages() {
+        if (getParentActivity() == null) {
+            return;
+        }
+        final java.util.ArrayList<tw.nekomimi.nekogram.helpers.DeleteHistoryHelper.DeleteEntry> list =
+                tw.nekomimi.nekogram.helpers.DeleteHistoryHelper.getDeletedForDialog(dialog_id, 200);
+
+        Context context = getParentActivity();
+        LinearLayout content = new LinearLayout(context);
+        content.setOrientation(LinearLayout.VERTICAL);
+        int pad = AndroidUtilities.dp(18);
+        content.setPadding(pad, AndroidUtilities.dp(8), pad, AndroidUtilities.dp(8));
+
+        int textColor = Theme.getColor(Theme.key_dialogTextBlack, themeDelegate);
+        int dateColor = Theme.getColor(Theme.key_dialogTextGray2, themeDelegate);
+
+        if (list.isEmpty()) {
+            TextView emptyView = new TextView(context);
+            emptyView.setTextSize(1, 15);
+            emptyView.setTextColor(dateColor);
+            emptyView.setText(LocaleController.getString(R.string.DeletedMessagesEmpty));
+            content.addView(emptyView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
+        }
+
+        for (int i = 0; i < list.size(); i++) {
+            tw.nekomimi.nekogram.helpers.DeleteHistoryHelper.DeleteEntry entry = list.get(i);
+            String sender = "";
+            if (entry.fromId > 0) {
+                TLRPC.User u = getMessagesController().getUser(entry.fromId);
+                if (u != null) {
+                    sender = UserObject.getUserName(u);
+                }
+            } else if (entry.fromId < 0) {
+                TLRPC.Chat c = getMessagesController().getChat(-entry.fromId);
+                if (c != null) {
+                    sender = c.title;
+                }
+            }
+
+            TextView header = new TextView(context);
+            header.setTextSize(1, 13);
+            header.setTextColor(dateColor);
+            header.setText((sender.isEmpty() ? "" : sender + " · ") + LocaleController.formatDateTime(entry.date * 1000L, true));
+            content.addView(header, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 0, 10, 0, 0));
+
+            TextView textView = new TextView(context);
+            textView.setTextSize(1, 16);
+            textView.setTextColor(textColor);
+            textView.setTextIsSelectable(true);
+            textView.setText(entry.text);
+            content.addView(textView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
+        }
+
+        ScrollView scrollView = new ScrollView(context);
+        scrollView.addView(content, LayoutHelper.createScroll(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.LEFT | Gravity.TOP));
+
+        BottomSheet.Builder builder = new BottomSheet.Builder(context, false, themeDelegate)
+                .setTitle(LocaleController.getString(R.string.DeletedMessagesTitle), true)
+                .setCustomView(scrollView);
+        showDialog(builder.create());
+    }
+
+    private void showEditHistory(MessageObject messageObject) {
+        if (messageObject == null || getParentActivity() == null || messageObject.messageOwner == null) {
+            return;
+        }
+        final long dialogId = messageObject.getDialogId();
+        final int messageId = messageObject.getId();
+        final java.util.ArrayList<EditHistoryHelper.EditEntry> history = EditHistoryHelper.getHistory(dialogId, messageId);
+
+        Context context = getParentActivity();
+        LinearLayout content = new LinearLayout(context);
+        content.setOrientation(LinearLayout.VERTICAL);
+        int pad = AndroidUtilities.dp(18);
+        content.setPadding(pad, AndroidUtilities.dp(8), pad, AndroidUtilities.dp(8));
+
+        int textColor = Theme.getColor(Theme.key_dialogTextBlack, themeDelegate);
+        int dateColor = Theme.getColor(Theme.key_dialogTextGray2, themeDelegate);
+
+        for (int i = 0; i < history.size(); i++) {
+            EditHistoryHelper.EditEntry entry = history.get(i);
+            TextView dateView = new TextView(context);
+            dateView.setTextSize(1, 13);
+            dateView.setTextColor(dateColor);
+            dateView.setText(LocaleController.formatDateTime(entry.editDate * 1000L, true));
+            content.addView(dateView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 0, 10, 0, 0));
+
+            TextView textView = new TextView(context);
+            textView.setTextSize(1, 16);
+            textView.setTextColor(textColor);
+            textView.setTextIsSelectable(true);
+            textView.setText(entry.text);
+            content.addView(textView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
+        }
+
+        if (history.isEmpty()) {
+            TextView emptyView = new TextView(context);
+            emptyView.setTextSize(1, 15);
+            emptyView.setTextColor(dateColor);
+            emptyView.setText(LocaleController.getString(R.string.MsgEditHistoryEmpty));
+            content.addView(emptyView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
+        }
+
+        TextView currentDateView = new TextView(context);
+        currentDateView.setTextSize(1, 13);
+        currentDateView.setTextColor(dateColor);
+        currentDateView.setText(messageObject.messageOwner.edit_date != 0
+                ? LocaleController.formatDateTime(messageObject.messageOwner.edit_date * 1000L, true)
+                : LocaleController.getInstance().getFormatterMonthYear().format(messageObject.messageOwner.date * 1000L));
+        content.addView(currentDateView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 0, 10, 0, 0));
+
+        TextView currentTextView = new TextView(context);
+        currentTextView.setTextSize(1, 16);
+        currentTextView.setTextColor(textColor);
+        currentTextView.setTextIsSelectable(true);
+        currentTextView.setText(messageObject.messageOwner.message == null ? "" : messageObject.messageOwner.message);
+        content.addView(currentTextView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
+
+        ScrollView scrollView = new ScrollView(context);
+        scrollView.addView(content, LayoutHelper.createScroll(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.LEFT | Gravity.TOP));
+
+        BottomSheet.Builder builder = new BottomSheet.Builder(context, false, themeDelegate)
+                .setTitle(LocaleController.getString(R.string.MsgEditHistory), true)
+                .setCustomView(scrollView);
+        showDialog(builder.create());
+    }
+
     private void processSelectedOption(int option) {
         if (selectedObject == null || getParentActivity() == null) {
             return;
@@ -34720,6 +34931,22 @@ public class ChatActivity extends BaseFragment implements
                 } else {
                     startEditingMessageObject(selectedObject, option == OPTION_SUGGESTION_EDIT_MESSAGE);
                 }
+                selectedObject = null;
+                selectedObjectGroup = null;
+                selectedObjectToEditCaption = null;
+                break;
+            }
+            case OPTION_COPY_MESSAGE_ID: {
+                if (selectedObject != null) {
+                    AndroidUtilities.addToClipboard(String.valueOf(selectedObject.getId()));
+                    BulletinFactory.of(Bulletin.BulletinWindow.make(getContext()), themeDelegate).createCopyBulletin(LocaleController.getString(R.string.TextCopied)).show();
+                }
+                selectedObject = null;
+                selectedObjectGroup = null;
+                break;
+            }
+            case OPTION_EDIT_HISTORY: {
+                showEditHistory(selectedObject);
                 selectedObject = null;
                 selectedObjectGroup = null;
                 selectedObjectToEditCaption = null;
@@ -47263,6 +47490,16 @@ public class ChatActivity extends BaseFragment implements
                     options.add(OPTION_EDIT);
                     icons.add(R.drawable.msg_edit);
                 }
+                if (selectedObject != null && selectedObject.messageOwner != null && (selectedObject.messageOwner.edit_date != 0 || EditHistoryHelper.hasHistory(dialog_id, selectedObject.getId()))) {
+                    items.add(LocaleController.getString(R.string.MsgEditHistory));
+                    options.add(OPTION_EDIT_HISTORY);
+                    icons.add(R.drawable.msg_edit);
+                }
+                if (selectedObject != null && selectedObject.getId() != 0) {
+                    items.add(LocaleController.getString(R.string.CopyMessageId));
+                    options.add(OPTION_COPY_MESSAGE_ID);
+                    icons.add(R.drawable.msg_copy);
+                }
                 if (ChatObject.isMonoForum(currentChat) && selectedObject.getGroupId() == 0 && selectedObjectGroup == null && message != null && message.messageOwner != null && message.messageOwner.suggested_post == null && message.messageOwner.action == null) {
                     items.add(LocaleController.getString(R.string.EditOfferAdd));
                     options.add(OPTION_SUGGESTION_ADD_OFFER);
@@ -47638,14 +47875,16 @@ public class ChatActivity extends BaseFragment implements
                     && message.type != MessageObject.TYPE_STORY_MENTION
                     && message.type != MessageObject.TYPE_GIFT_STARS;
                 if (canForward) {
-                    var hasCaption = ForwardItem.hasCaption(selectedObject, selectedObjectGroup);
-                    items.add(ForwardItem.getLastForwardOptionTitle(hasCaption, true));
-                    options.add(ForwardItem.getLastForwardOption(hasCaption));
-                    icons.add(R.drawable.msg_forward);
-                    if (NekoConfig.showNoQuoteForward) {
-                        items.add(LocaleController.getString(R.string.NoQuoteForwardShort));
-                        options.add(OPTION_FORWARD_NOQUOTE);
+                    if (!NekoConfig.hideForwardButton) {
+                        var hasCaption = ForwardItem.hasCaption(selectedObject, selectedObjectGroup);
+                        items.add(ForwardItem.getLastForwardOptionTitle(hasCaption, true));
+                        options.add(ForwardItem.getLastForwardOption(hasCaption));
                         icons.add(R.drawable.msg_forward);
+                        if (NekoConfig.showNoQuoteForward) {
+                            items.add(LocaleController.getString(R.string.NoQuoteForwardShort));
+                            options.add(OPTION_FORWARD_NOQUOTE);
+                            icons.add(R.drawable.msg_forward);
+                        }
                     }
                     if (NekoConfig.showSetReminder) {
                         items.add(LocaleController.getString(R.string.SetReminder));
@@ -47709,6 +47948,16 @@ public class ChatActivity extends BaseFragment implements
                     items.add(LocaleController.getString(R.string.Edit));
                     options.add(OPTION_EDIT);
                     icons.add(R.drawable.msg_edit);
+                }
+                if (selectedObject != null && selectedObject.messageOwner != null && (selectedObject.messageOwner.edit_date != 0 || EditHistoryHelper.hasHistory(dialog_id, selectedObject.getId()))) {
+                    items.add(LocaleController.getString(R.string.MsgEditHistory));
+                    options.add(OPTION_EDIT_HISTORY);
+                    icons.add(R.drawable.msg_edit);
+                }
+                if (selectedObject != null && selectedObject.getId() != 0) {
+                    items.add(LocaleController.getString(R.string.CopyMessageId));
+                    options.add(OPTION_COPY_MESSAGE_ID);
+                    icons.add(R.drawable.msg_copy);
                 }
                 if (ChatObject.isMonoForum(currentChat) && selectedObject.getGroupId() == 0 && selectedObjectGroup == null && message != null && message.messageOwner != null && message.messageOwner.suggested_post == null && message.messageOwner.action == null) {
                     items.add(LocaleController.getString(R.string.EditOfferAdd));

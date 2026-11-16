@@ -130,6 +130,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import tw.nekomimi.nekogram.NekoConfig;
+import tw.nekomimi.nekogram.helpers.EditHistoryHelper;
 
 public class SendMessagesHelper extends BaseController implements NotificationCenter.NotificationCenterDelegate {
 
@@ -3096,6 +3097,15 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                 messageObject.previousMessage = newMsg.message;
                 messageObject.previousMessageEntities = newMsg.entities;
                 messageObject.previousAttachPath = newMsg.attachPath;
+
+                if (NekoConfig.keepEditHistory) {
+                    try {                        if (newMsg.message != null && !newMsg.message.isEmpty() && !newMsg.message.equals(messageObject.editingMessage)) {
+                            EditHistoryHelper.recordEdit(peer, messageObject.getId(), newMsg.message, newMsg.date, newMsg.edit_date);
+                        }
+                    } catch (Throwable e) {
+                        FileLog.e(e);
+                    }
+                }
 
                 TLRPC.MessageMedia media = newMsg.media;
                 if (media == null) {
@@ -10736,7 +10746,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                     bitmap = ImageLoader.loadBitmap(path, uri, 800, 800, true);
                 }
                 if (!bigExists) {
-                    TLRPC.PhotoSize size = ImageLoader.scaleAndSaveImage(bigSize, bitmap, Bitmap.CompressFormat.JPEG, true, AndroidUtilities.getPhotoSize(), AndroidUtilities.getPhotoSize(), 80, false, 101, 101,false);
+                    TLRPC.PhotoSize size = ImageLoader.scaleAndSaveImage(bigSize, bitmap, Bitmap.CompressFormat.JPEG, true, AndroidUtilities.getPhotoSize(), AndroidUtilities.getPhotoSize(), 94, false, 101, 101,false);
                     if (size != bigSize) {
                         photo.sizes.add(0, size);
                     }

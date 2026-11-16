@@ -497,6 +497,13 @@ public class ImageReceiver implements NotificationCenter.NotificationCenterDeleg
                 location = ImageLocation.getForUserOrChat(currentAccount, object, ImageLocation.TYPE_BIG);
                 filter = "100_100";
             }
+            if (object instanceof TLRPC.User && ((TLRPC.User) object).id == 777000) {
+                // freshGram: Telegram service chat (777000) — green letter avatar instead of blue logo photo
+                location = null;
+                filter = null;
+                strippedBitmap = null;
+                hasStripped = false;
+            }
             if (videoLocation != null) {
                 setImage(videoLocation, "avatar", location, filter, null, null, strippedBitmap, 0, null, parentObject, 0);
                 animatedFileDrawableRepeatMaxCount = 3;

@@ -36,7 +36,9 @@ import android.os.Looper;
 import android.os.Parcelable;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
+import android.text.method.LinkMovementMethod;
 import android.text.style.ImageSpan;
+import android.text.style.URLSpan;
 import android.util.TypedValue;
 import android.view.Display;
 import android.view.Gravity;
@@ -45,6 +47,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
+import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
@@ -102,6 +105,8 @@ public class IntroActivity extends BaseFragment implements NotificationCenter.No
     private ViewPager viewPager;
     private BottomPagesView bottomPages;
     private TextView switchLanguageTextView;
+    private TextView switchLanguageEnglish;
+    private TextView switchLanguageRussian;
     private GradientDrawable startMessagingButtonBackground;
     private TextView startMessagingButton;
     private FrameLayout frameLayout2;
@@ -424,6 +429,32 @@ public class IntroActivity extends BaseFragment implements NotificationCenter.No
 
         frameContainerView.addView(themeFrameLayout, LayoutHelper.createFrame(64, 64, Gravity.TOP | Gravity.RIGHT, 0, themeMargin, themeMargin, 0));
 
+        LinearLayout languageSwitcher = new LinearLayout(context);
+        languageSwitcher.setOrientation(LinearLayout.HORIZONTAL);
+        // Выравниваем по вертикальному центру кнопки смены темы (64dp), которая справа.
+        int languageSwitcherTopMargin = dp(themeMargin) + dp(16) + (AndroidUtilities.isTablet() ? 0 : AndroidUtilities.statusBarHeight);
+        frameContainerView.addView(languageSwitcher, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, 32, Gravity.TOP | Gravity.LEFT, themeMargin, languageSwitcherTopMargin, 0, 0));
+
+        switchLanguageEnglish = createIntroLanguageView(context, "English", "en");
+        languageSwitcher.addView(switchLanguageEnglish, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT));
+        switchLanguageRussian = createIntroLanguageView(context, "Русский", "ru");
+        languageSwitcher.addView(switchLanguageRussian, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, 0, 0, 0, 0, 14));
+
+        TextView forkNotice = new TextView(context);
+        forkNotice.setGravity(Gravity.CENTER);
+        forkNotice.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 12);
+        SpannableStringBuilder notice = new SpannableStringBuilder();
+        notice.append(LocaleController.getString(R.string.IntroForkNotice));
+        notice.append("\n");
+        int linkStart = notice.length();
+        notice.append("Snowy-Fluffy/freshGram");
+        notice.setSpan(new URLSpan("https://github.com/Snowy-Fluffy/freshGram"), linkStart, notice.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        forkNotice.setText(notice);
+        forkNotice.setMovementMethod(LinkMovementMethod.getInstance());
+        forkNotice.setLinkTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteLinkText));
+        forkNotice.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText));
+        frameContainerView.addView(forkNotice, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM, 24, 0, 24, 24));
+
         fragmentView = scrollView;
 
         NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.suggestedLangpack);
@@ -532,6 +563,60 @@ public class IntroActivity extends BaseFragment implements NotificationCenter.No
                 }
             }
         }, ConnectionsManager.RequestFlagWithoutLogin);
+    }
+
+    private TextView createIntroLanguageView(Context context, String label, String langCode) {
+        TextView textView = new TextView(context);
+        textView.setText(label);
+        textView.setGravity(Gravity.CENTER);
+        textView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 15);
+        textView.setPadding(dp(8), 0, dp(8), 0);
+        textView.setTypeface(AndroidUtilities.bold());
+        textView.setOnClickListener(v -> switchIntroLanguage(langCode));
+        textView.setContentDescription(label);
+        return textView;
+    }
+
+    private void switchIntroLanguage(String langCode) {
+        LocaleController.LocaleInfo cur = LocaleController.getInstance().getCurrentLocaleInfo();
+        android.util.Log.i("freshGram", "switchIntroLanguage: " + langCode + " current=" + (cur == null ? "null" : cur.shortName));
+        if (startPressed) {
+            return;
+        }
+        LocaleController.LocaleInfo target = null;
+        for (int a = 0; a < LocaleController.getInstance().languages.size(); a++) {
+            LocaleController.LocaleInfo info = LocaleController.getInstance().languages.get(a);
+            if (langCode.equals(info.shortName)) {
+                target = info;
+                break;
+            }
+        }
+        if (target == null) {
+            return;
+        }
+        LocaleController.LocaleInfo current = LocaleController.getInstance().getCurrentLocaleInfo();
+        if (current != null && langCode.equals(current.shortName)) {
+            return;
+        }
+        startPressed = true;
+        NotificationCenter.getGlobalInstance().addObserver(new NotificationCenter.NotificationCenterDelegate() {
+            @Override
+            public void didReceivedNotification(int id, int account, Object... args) {
+                if (id == NotificationCenter.reloadInterface) {
+                    NotificationCenter.getGlobalInstance().removeObserver(this, id);
+                    AndroidUtilities.runOnUIThread(() -> {
+                        // Пересоздаём интро целиком, чтобы строки перечитались на новом языке.
+                        IntroActivity fresh = new IntroActivity();
+                        if (isOnLogout) {
+                            fresh.setOnLogout();
+                        }
+                        presentFragment(fresh, true);
+                        destroyed = true;
+                    }, 100);
+                }
+            }
+        }, NotificationCenter.reloadInterface);
+        LocaleController.getInstance().applyLanguage(target, true, false, currentAccount);
     }
 
     @Override
@@ -793,7 +878,7 @@ public class IntroActivity extends BaseFragment implements NotificationCenter.No
             loadTexture(R.drawable.ic_launcher_intro, 21);
             loadTexture(v -> {
                 Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-                paint.setColor(0xFFC4DEFF); // It's logo color, it should not be colored by the theme
+                paint.setColor(0xFFD1FFCC); // freshGram light green logo backdrop
                 int size = dp(ICON_HEIGHT_DP);
                 Bitmap bm = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
                 Canvas c = new Canvas(bm);
@@ -965,6 +1050,14 @@ public class IntroActivity extends BaseFragment implements NotificationCenter.No
         //logoDrawable.setColorFilter(Theme.multAlpha(getThemedColor(Theme.key_actionBarDefaultTitle), 0.9f), PorterDuff.Mode.MULTIPLY);
         fragmentView.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
         switchLanguageTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlueText4));
+        LocaleController.LocaleInfo currentIntroLocale = LocaleController.getInstance().getCurrentLocaleInfo();
+        boolean introEnglishActive = currentIntroLocale == null || !"ru".equals(currentIntroLocale.shortName);
+        if (switchLanguageEnglish != null) {
+            switchLanguageEnglish.setTextColor(Theme.getColor(introEnglishActive ? Theme.key_windowBackgroundWhiteBlueText4 : Theme.key_windowBackgroundWhiteGrayText));
+        }
+        if (switchLanguageRussian != null) {
+            switchLanguageRussian.setTextColor(Theme.getColor(introEnglishActive ? Theme.key_windowBackgroundWhiteGrayText : Theme.key_windowBackgroundWhiteBlueText4));
+        }
         startMessagingButton.setTextColor(Theme.getColor(Theme.key_featuredStickers_buttonText));
         startMessagingButton.setBackground(Theme.createSimpleSelectorRoundRectDrawable(dp(24), Color.TRANSPARENT, Theme.getColor(Theme.key_featuredStickers_addButtonPressed)));
         darkThemeDrawable.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_featuredStickers_addButton), PorterDuff.Mode.SRC_IN));

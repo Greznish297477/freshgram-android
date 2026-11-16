@@ -1,0 +1,129 @@
+# freshGram Android — документация
+
+> English README: [`README.md`](../README.md)
+
+Неофициальный клиент Telegram для Android, переносящий на базу **Nekogram**
+полезные функции **freshGram Desktop**, **AyuGram** и **Materialgram**.
+Не связан с Telegram, Nekogram и командой freshGram Desktop и ими не
+поддерживается.
+
+## Что это вообще
+
+freshGram Desktop — форк Telegram Desktop, добавляющий приватность и удобство
+(режим призрака, история сообщений, анти-удаление, режим стримера, оформление).
+Этот проект переносит ту же идею на Android, сохраняя зелёный брендинг freshGram
+и добавляя отдельные функции из экосистем AyuGram и Materialgram.
+
+## На чём базируется
+
+| Слой | Источник | Лицензия |
+|---|---|---|
+| Android-клиент | Официальный Telegram для Android | GPL-2.0 (+ доп. условия Telegram) |
+| Непосредственная база | [Nekogram](https://github.com/Nekogram/Nekogram) | GPL-2.0 |
+| Референс функций | [freshGram Desktop](https://github.com/Snowy-Fluffy/freshGram) | GPL-2.0 |
+| Референс функций | AyuGram, Materialgram | GPL-2.0 |
+
+- Пакет: `app.freshgram.android`
+- Версия: `13.1.1` (код `7237`)
+- Версия вышестоящего клиента, которую видит Telegram: `13.1.1`
+
+Так как в основе лежит Telegram для Android (с его дополнительными условиями
+поверх GPL-2.0), freshGram Android распространяется на тех же условиях.
+Подробнее — в [`LICENSE`](../LICENSE).
+
+## Версии full и lite
+
+Каждый релиз содержит два варианта отдельными APK:
+
+| Вариант | Описание |
+|---|---|
+| **full** | Всё, включая приватные функции. Для личного использования. |
+| **lite** | Приватные функции отключены, собрана с `-PfreshgramLite=true`, рассчитана на соблюдение политики Google Play. |
+
+Обе версии используют **один** пакет (`app.freshgram.android`), поэтому
+устанавливать нужно **только одну**, и в Google Play можно загрузить лишь одну.
+
+Функции, которые в lite отключены: анти-удаление, режим призрака, «оставлять
+удалённые чаты», режим стримера, история правок, «сохранять удалённые
+сообщения», скрытие спонсорских сообщений и выбор без ограничений (>100).
+
+Всё остальное одинаково: зелёная тема и брендинг, выбор иконки приложения,
+порядок вкладок, шрифты, смена языка и стартовый экран.
+
+## Скачивание
+
+APK прикрепляются к [GitHub Releases](../../releases):
+
+```
+freshGram-<версия>-<код>-full-universal.apk      # все ABI
+freshGram-<версия>-<код>-full-arm64-v8a.apk      # современные телефоны
+freshGram-<версия>-<код>-full-armeabi-v7a.apk    # старые 32-битные телефоны
+freshGram-<версия>-<код>-lite-universal.apk
+freshGram-<версия>-<код>-lite-arm64-v8a.apk
+freshGram-<версия>-<код>-lite-armeabi-v7a.apk
+```
+
+Установка:
+
+```bash
+adb install -r freshGram-13.1.1-7237-full-universal.apk
+```
+
+## Сборка
+
+### Требования
+
+- JDK 25
+- Android SDK (build-tools, NDK, CMake — как в CI)
+- `local.properties` с API-ключами и настройками подписи
+
+### Локально
+
+```bash
+# full + lite, результат в ./dist
+./build-versions.sh
+./build-versions.sh full
+./build-versions.sh lite
+```
+
+Или напрямую Gradle:
+
+```bash
+./gradlew :TMessagesProj_App:assembleRelease
+```
+
+### CI
+
+Workflow [`.github/workflows/release-full-lite.yml`](../.github/workflows/release-full-lite.yml)
+собирает оба варианта и публикует GitHub Release при пуше тега `v*`.
+Список нужных секретов и шаги — в [`PUBLISH.md`](PUBLISH.md).
+
+### Про подпись
+
+Нативная проверка анти-тампера в `TMessagesProj/jni/colorado/colorado.h` привязана
+к конкретному имени пакета и сертификату подписи. Если сменить ключ подписи,
+константы **нужно** пересчитать, иначе приложение будет завершаться (`SIGKILL`)
+при старте. Debug-ключ приводит к тому же результату.
+
+## Статус проекта и документация
+
+- [`../HANDOFF.md`](../HANDOFF.md) — текущее состояние проекта
+- [`FEATURE-MAP.md`](FEATURE-MAP.md) — карта переноса функций
+- [`PORT-MATRIX.md`](PORT-MATRIX.md) — матрица статуса порта
+- [`PUBLISH.md`](PUBLISH.md) — как выкладывать релизы
+- [`FRESHGRAM-FOR-AI.md`](FRESHGRAM-FOR-AI.md) — контекст для ИИ-ассистентов
+
+## Документация API и протокола
+
+- Telegram API: https://core.telegram.org/api
+- MTProto: https://core.telegram.org/mtproto
+
+## Лицензия
+
+GNU General Public License v2.0 с дополнительными условиями, применимыми к
+исходникам Telegram для Android. См. [`LICENSE`](../LICENSE).
+
+## Дисклеймер
+
+freshGram Android — неофициальный форк Telegram и Nekogram. Не поддерживается
+командой Telegram. Используйте на свой страх и риск.

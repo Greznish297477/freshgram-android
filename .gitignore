@@ -16,3 +16,11 @@ TMessagesProj_AppHuawei/afat/
 google-services.json
 sentry.properties
 TMessagesProj/jni/ffmpeg/build_android
+
+keystore.jks
+*.jks
+sentry.properties
+
+# артефакты сборки/релизов — выкладываются в GitHub Releases, не в git
+dist/
+!dist/README.md

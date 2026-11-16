@@ -28,6 +28,7 @@ import android.text.TextUtils;
 import androidx.core.graphics.ColorUtils;
 
 import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.Emoji;
 import org.telegram.messenger.FileLog;
@@ -257,7 +258,12 @@ public class AvatarDrawable extends Drawable {
             color = color2 = Theme.getColor(Theme.key_chats_actionBackground);
         } else if (avatarType == AVATAR_TYPE_ARCHIVED) {
             color = color2 = getThemedColor(Theme.key_avatar_backgroundArchivedHidden);
-        } else if (avatarType == AVATAR_TYPE_SUGGESTION || avatarType == AVATAR_TYPE_REPLIES || avatarType == AVATAR_TYPE_SAVED || avatarType == AVATAR_TYPE_OTHER_CHATS) {
+        } else if (avatarType == AVATAR_TYPE_SAVED) {
+            // freshGram: зелёная закладка «Избранное», как Telegram, но под цвет приложения
+            hasGradient = true;
+            color = 0xFF0F9200;
+            color2 = 0xFF94F389;
+        } else if (avatarType == AVATAR_TYPE_SUGGESTION || avatarType == AVATAR_TYPE_REPLIES || avatarType == AVATAR_TYPE_OTHER_CHATS) {
             hasGradient = true;
             color = getThemedColor(Theme.key_avatar_backgroundSaved);
             color2 = getThemedColor(Theme.key_avatar_background2Saved);
@@ -399,8 +405,13 @@ public class AvatarDrawable extends Drawable {
         invalidateTextLayout = true;
         hasGradient = true;
         hasAdvancedGradient = false;
-        color = getThemedColor(Theme.keys_avatar_background[getColorIndex(id)]);
-        color2 = getThemedColor(Theme.keys_avatar_background2[getColorIndex(id)]);
+        if (id == 777000) {
+            color = 0xFF0F9200;
+            color2 = 0xFF94F389;
+        } else {
+            color = getThemedColor(Theme.keys_avatar_background[getColorIndex(id)]);
+            color2 = getThemedColor(Theme.keys_avatar_background2[getColorIndex(id)]);
+        }
         avatarType = AVATAR_TYPE_NORMAL;
         drawDeleted = false;
         getAvatarSymbols("", "", "", stringBuilder);
@@ -427,7 +438,14 @@ public class AvatarDrawable extends Drawable {
             hasAdvancedGradient = false;
         }
 
-        if (profileColor != null) {
+        customIconDrawable = null;
+        if (id == 777000) {
+            // Telegram official chat: фирменный зелёный + белый логотип-самолётик.
+            color = 0xFF0F9200;
+            color2 = 0xFF94F389;
+            customIconDrawable = ApplicationLoader.applicationContext.getResources().getDrawable(R.drawable.ic_telegram_plane);
+            scaleSize = 1.0f;
+        } else if (profileColor != null) {
             if (advancedGradient) {
                 int[] gradient = advancedGradients[getPeerColorIndex(profileColor.getAvatarColor1())];
                 this.advancedGradient.setColors(gradient[0], gradient[1], gradient[2], gradient[3]);

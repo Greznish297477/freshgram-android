@@ -40,6 +40,7 @@ import org.telegram.tgnet.NativeByteBuffer;
 import org.telegram.tgnet.RequestDelegate;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
+import tw.nekomimi.nekogram.helpers.DeleteHistoryHelper;
 import org.telegram.tgnet.Vector;
 import org.telegram.tgnet.tl.TL_account;
 import org.telegram.tgnet.tl.TL_bots;
@@ -7868,6 +7869,29 @@ public class MessagesStorage extends BaseController {
         return ref.get();
     }
 
+    /**
+     * Async, deadlock-free variant of {@link #getMessage}: runs entirely on the storage queue
+     * and delivers the result on the UI thread. Never blocks the caller.
+     */
+    public void getMessageAsync(long dialogId, long msgId, MessageAsyncCallback callback) {
+        storageQueue.postRunnable(() -> {
+            final TLRPC.Message message;
+            try {
+                message = getMessageInternal(dialogId, msgId);
+            } catch (Throwable e) {
+                FileLog.e(e);
+                return;
+            }
+            if (callback != null) {
+                AndroidUtilities.runOnUIThread(() -> callback.onMessage(message));
+            }
+        });
+    }
+
+    public interface MessageAsyncCallback {
+        void onMessage(TLRPC.Message message);
+    }
+
     private TLRPC.Message getMessageInternal(long dialogId, long msgId) {
         SQLiteCursor cursor = null;
         TLRPC.Message result = null;
@@ -14652,6 +14676,14 @@ public class MessagesStorage extends BaseController {
                         if (data != null) {
                             TLRPC.Message message = TLRPC.Message.TLdeserialize(data, data.readInt32(false), false);
                             message.readAttachPath(data, currentUser);
+                            if (tw.nekomimi.nekogram.NekoConfig.keepDeleteHistory && message.message != null && message.message.length() > 0) {
+                                try {
+                                    long fromId = message.from_id != null ? DialogObject.getPeerDialogId(message.from_id) : 0;
+                                    DeleteHistoryHelper.recordDelete(did, mid, fromId, message.message, message.date);
+                                } catch (Throwable e) {
+                                    FileLog.e(e);
+                                }
+                            }
                             if (deletedMessages != null) {
                                 deletedMessages.add(message);
                             }

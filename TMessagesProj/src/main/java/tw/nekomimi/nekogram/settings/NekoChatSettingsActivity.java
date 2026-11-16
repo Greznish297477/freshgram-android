@@ -17,6 +17,7 @@ import android.widget.TextView;
 import androidx.core.graphics.ColorUtils;
 
 import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.BuildVars;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
 import org.telegram.ui.ActionBar.AlertDialog;
@@ -51,6 +52,16 @@ public class NekoChatSettingsActivity extends BaseNekoSettingsActivity {
     private final int reducedColorsRow = rowId++;
 
     private final int ignoreBlockedRow = rowId++;
+    private final int antiRecallRow = rowId++;
+    private final int ghostModeRow = rowId++;
+    private final int keepDeletedDialogsRow = rowId++;
+    private final int streamerModeRow = rowId++;
+    private final int unlimitedSelectionRow = rowId++;
+    private final int keepEditHistoryRow = rowId++;
+    private final int hideSponsoredRow = rowId++;
+    private final int keepDeleteHistoryRow = rowId++;
+    private final int hideForwardRow = rowId++;
+    private final int peekLastSeenRow = rowId++;
     private final int quickForwardRow = rowId++;
     private final int hideKeyboardOnChatScrollRow = rowId++;
     private final int tryToOpenAllLinksInIVRow = rowId++;
@@ -108,6 +119,34 @@ public class NekoChatSettingsActivity extends BaseNekoSettingsActivity {
 
         items.add(UItem.asHeader(LocaleController.getString(R.string.Chat)));
         items.add(UItem.asCheck(ignoreBlockedRow, LocaleController.getString(R.string.IgnoreBlocked), LocaleController.getString(R.string.IgnoreBlockedAbout)).slug("ignoreBlocked").setChecked(NekoConfig.ignoreBlocked));
+        if (!BuildVars.LITE) {
+        items.add(UItem.asCheck(antiRecallRow, LocaleController.getString(R.string.AntiRecall), LocaleController.getString(R.string.AntiRecallAbout)).slug("antiRecall").setChecked(NekoConfig.antiRecall));
+        }
+        if (!BuildVars.LITE) {
+        items.add(UItem.asCheck(ghostModeRow, LocaleController.getString(R.string.GhostMode), LocaleController.getString(R.string.GhostModeAbout)).slug("ghostMode").setChecked(NekoConfig.ghostMode));
+        }
+        if (!BuildVars.LITE) {
+        items.add(UItem.asCheck(peekLastSeenRow, LocaleController.getString(R.string.PeekLastSeen), LocaleController.getString(R.string.PeekLastSeenAbout)).slug("peekLastSeen").setChecked(NekoConfig.peekLastSeen));
+        }
+        if (!BuildVars.LITE) {
+        items.add(UItem.asCheck(keepDeletedDialogsRow, LocaleController.getString(R.string.KeepDeletedDialogs), LocaleController.getString(R.string.KeepDeletedDialogsAbout)).slug("keepDeletedDialogs").setChecked(NekoConfig.keepDeletedDialogs));
+        }
+        if (!BuildVars.LITE) {
+        items.add(UItem.asCheck(streamerModeRow, LocaleController.getString(R.string.StreamerMode), LocaleController.getString(R.string.StreamerModeAbout)).slug("streamerMode").setChecked(NekoConfig.streamerMode));
+        }
+        if (!BuildVars.LITE) {
+        items.add(UItem.asCheck(unlimitedSelectionRow, LocaleController.getString(R.string.UnlimitedSelection), LocaleController.getString(R.string.UnlimitedSelectionAbout)).slug("unlimitedSelection").setChecked(NekoConfig.unlimitedSelection));
+        }
+        if (!BuildVars.LITE) {
+        items.add(UItem.asCheck(keepEditHistoryRow, LocaleController.getString(R.string.KeepEditHistory), LocaleController.getString(R.string.KeepEditHistoryAbout)).slug("keepEditHistory").setChecked(NekoConfig.keepEditHistory));
+        }
+        if (!BuildVars.LITE) {
+        items.add(UItem.asCheck(hideSponsoredRow, LocaleController.getString(R.string.HideSponsoredMessages), LocaleController.getString(R.string.HideSponsoredMessagesAbout)).slug("hideSponsored").setChecked(NekoConfig.hideSponsoredMessages));
+        }
+        if (!BuildVars.LITE) {
+        items.add(UItem.asCheck(keepDeleteHistoryRow, LocaleController.getString(R.string.KeepDeleteHistory), LocaleController.getString(R.string.KeepDeleteHistoryAbout)).slug("keepDeleteHistory").setChecked(NekoConfig.keepDeleteHistory));
+        }
+        items.add(UItem.asCheck(hideForwardRow, LocaleController.getString(R.string.HideForwardButton), LocaleController.getString(R.string.HideForwardButtonAbout)).slug("hideForward").setChecked(NekoConfig.hideForwardButton));
         items.add(UItem.asCheck(quickForwardRow, LocaleController.getString(R.string.QuickForward)).slug("quickForward").setChecked(NekoConfig.quickForward));
         items.add(UItem.asCheck(hideKeyboardOnChatScrollRow, LocaleController.getString(R.string.HideKeyboardOnChatScroll)).slug("hideKeyboardOnChatScroll").setChecked(NekoConfig.hideKeyboardOnChatScroll));
         items.add(UItem.asCheck(tryToOpenAllLinksInIVRow, LocaleController.getString(R.string.OpenAllLinksInInstantView)).slug("tryToOpenAllLinksInIV").setChecked(NekoConfig.tryToOpenAllLinksInIV));
@@ -179,6 +218,56 @@ public class NekoChatSettingsActivity extends BaseNekoSettingsActivity {
             NekoConfig.toggleIgnoreBlocked();
             if (view instanceof TextCheckCell) {
                 ((TextCheckCell) view).setChecked(NekoConfig.ignoreBlocked);
+            }
+        } else if (id == antiRecallRow) {
+            NekoConfig.toggleAntiRecall();
+            if (view instanceof TextCheckCell) {
+                ((TextCheckCell) view).setChecked(NekoConfig.antiRecall);
+            }
+        } else if (id == ghostModeRow) {
+            NekoConfig.toggleGhostMode();
+            if (view instanceof TextCheckCell) {
+                ((TextCheckCell) view).setChecked(NekoConfig.ghostMode);
+            }
+        } else if (id == peekLastSeenRow) {
+            NekoConfig.togglePeekLastSeen();
+            if (view instanceof TextCheckCell) {
+                ((TextCheckCell) view).setChecked(NekoConfig.peekLastSeen);
+            }
+        } else if (id == keepDeletedDialogsRow) {
+            NekoConfig.toggleKeepDeletedDialogs();
+            if (view instanceof TextCheckCell) {
+                ((TextCheckCell) view).setChecked(NekoConfig.keepDeletedDialogs);
+            }
+        } else if (id == streamerModeRow) {
+            NekoConfig.toggleStreamerMode();
+            if (view instanceof TextCheckCell) {
+                ((TextCheckCell) view).setChecked(NekoConfig.streamerMode);
+            }
+        } else if (id == unlimitedSelectionRow) {
+            NekoConfig.toggleUnlimitedSelection();
+            if (view instanceof TextCheckCell) {
+                ((TextCheckCell) view).setChecked(NekoConfig.unlimitedSelection);
+            }
+        } else if (id == keepEditHistoryRow) {
+            NekoConfig.toggleKeepEditHistory();
+            if (view instanceof TextCheckCell) {
+                ((TextCheckCell) view).setChecked(NekoConfig.keepEditHistory);
+            }
+        } else if (id == hideSponsoredRow) {
+            NekoConfig.toggleHideSponsoredMessages();
+            if (view instanceof TextCheckCell) {
+                ((TextCheckCell) view).setChecked(NekoConfig.hideSponsoredMessages);
+            }
+        } else if (id == keepDeleteHistoryRow) {
+            NekoConfig.toggleKeepDeleteHistory();
+            if (view instanceof TextCheckCell) {
+                ((TextCheckCell) view).setChecked(NekoConfig.keepDeleteHistory);
+            }
+        } else if (id == hideForwardRow) {
+            NekoConfig.toggleHideForwardButton();
+            if (view instanceof TextCheckCell) {
+                ((TextCheckCell) view).setChecked(NekoConfig.hideForwardButton);
             }
         } else if (id == hideKeyboardOnChatScrollRow) {
             NekoConfig.toggleHideKeyboardOnChatScroll();

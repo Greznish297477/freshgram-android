@@ -684,6 +684,7 @@ public class SessionsActivity extends BaseFragment implements NotificationCenter
                         }
                     }
                     ttlDays = res.authorization_ttl_days;
+                    MessagesController.getInstance(currentAccount).deviceSessionsCount = res.authorizations.size();
                     updateRows();
                     if (delegate != null) {
                         delegate.sessionsLoaded();

@@ -321,11 +321,6 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
         tabs[INDEX_SETTINGS] = GlassTabView.createMainTab(context, resourceProvider, GlassTabView.TabAnimation.SETTINGS, R.string.Settings);
         tabs[INDEX_CALLS] = GlassTabView.createMainTab(context, resourceProvider, GlassTabView.TabAnimation.CALLS, R.string.MainTabsCalls);
         tabs[INDEX_PROFILE] = GlassTabView.createAvatar(context, resourceProvider, currentAccount, R.string.MainTabsProfile);
-        tabs[INDEX_CHATS].setOnLongClickListener(this::openFoldersSelector);
-        tabs[INDEX_CONTACTS].setOnLongClickListener(this::openContactsSelector);
-        tabs[INDEX_CALLS].setOnLongClickListener(this::openCallsSelector);
-        tabs[INDEX_PROFILE].setOnLongClickListener(this::openAccountSelector);
-
         tabsView.addTabToIgnoreClick(tabs[INDEX_CHATS]);
         tabsView.addTabToIgnoreClick(tabs[INDEX_CONTACTS]);
         tabsView.addTabToIgnoreClick(tabs[INDEX_PROFILE]);
@@ -351,10 +346,11 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
                 selectTab(position, true);
                 viewPager.scrollToPosition(position);
             });
-
-            tabsView.addView(tabs[index]);
-            tabsView.setViewVisible(view, true, false);
         }
+
+        addTabsInOrder();
+
+        tabsView.setTabsOrderChangedListener(this::persistTabsOrder);
         checkUi_callTabVisible(getUserConfig().showCallsTab, false);
 
         selectTab(viewPager.getCurrentPosition(), false);
@@ -827,14 +823,55 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
         return dialogsActivity;
     }
 
-    /* */
-
-    public GlassTabView[] tabs;
-
     public void selectTab(int position, boolean animated) {
         for (int a = 0; a < tabs.length; a++) {
             GlassTabView tab = tabs[a];
             tab.setSelected(indexToPosition(a) == position, animated);
+        }
+    }
+
+    public GlassTabView[] tabs;
+
+    private static final int[][] POSITION_TABS = {{INDEX_CHATS}, {INDEX_CONTACTS}, {INDEX_SETTINGS, INDEX_CALLS}, {INDEX_PROFILE}};
+
+    private void addTabsInOrder() {
+        int[] order = NekoConfig.mainTabsOrder;
+        for (int slot = 0; slot < order.length; slot++) {
+            for (int index : POSITION_TABS[order[slot]]) {
+                tabsView.addView(tabs[index]);
+                tabsView.setViewVisible(tabs[index], true, false);
+            }
+        }
+    }
+
+    private void persistTabsOrder() {
+        int[] order = new int[4];
+        boolean[] seen = new boolean[4];
+        int slot = 0;
+        for (int i = 0; i < tabsView.getChildCount() && slot < 4; i++) {
+            View child = tabsView.getChildAt(i);
+            if (child.getVisibility() != View.VISIBLE) {
+                continue;
+            }
+            int index = -1;
+            for (int t = 0; t < tabs.length; t++) {
+                if (tabs[t] == child) {
+                    index = t;
+                    break;
+                }
+            }
+            if (index < 0) {
+                continue;
+            }
+            int position = indexToPosition(index);
+            if (position < 0 || position > 3 || seen[position]) {
+                continue;
+            }
+            seen[position] = true;
+            order[slot++] = position;
+        }
+        if (slot == 4) {
+            NekoConfig.setMainTabsOrder(order);
         }
     }
 

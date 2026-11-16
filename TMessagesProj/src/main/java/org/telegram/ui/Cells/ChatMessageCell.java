@@ -6353,7 +6353,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     }
 
     public int getChecksX() {
-        return layoutWidth - dp(SharedConfig.bubbleRadius >= 10 ? 27.3f : 25.3f);
+        return layoutWidth - dp(tw.nekomimi.nekogram.NekoConfig.getBubbleRadius() >= 10 ? 27.3f : 25.3f);
     }
 
     public int getChecksY() {
@@ -9203,7 +9203,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     backgroundWidth = totalCommentWidth + dp(28);
                     groupMedia.setOverrideWidth(backgroundWidth - dp(8 + 9));
                 }
-                int timeWidthTotal = timeWidth + dp((SharedConfig.bubbleRadius >= 10 ? 22 : 18) + (messageObject.isOutOwner() ? 20 : 0) + 20);
+                int timeWidthTotal = timeWidth + dp((tw.nekomimi.nekogram.NekoConfig.getBubbleRadius() >= 10 ? 22 : 18) + (messageObject.isOutOwner() ? 20 : 0) + 20);
                 if (timeWidthTotal > backgroundWidth) {
                     backgroundWidth = timeWidthTotal;
                     groupMedia.setOverrideWidth(backgroundWidth - dp(8 + 9));
@@ -10018,7 +10018,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                         availableTimeWidth = (int) (AndroidUtilities.roundMessageSize - Math.ceil(Theme.chat_audioTimePaint.measureText("00:00")) - dp(46));
                     }
                     measureTime(messageObject);
-                    int timeWidthTotal = timeWidth + dp((SharedConfig.bubbleRadius >= 10 ? 22 : 18) + (messageObject.isOutOwner() ? 20 : 0));
+                    int timeWidthTotal = timeWidth + dp((tw.nekomimi.nekogram.NekoConfig.getBubbleRadius() >= 10 ? 22 : 18) + (messageObject.isOutOwner() ? 20 : 0));
                     if (w < timeWidthTotal) {
                         w = timeWidthTotal;
                     }
@@ -11023,10 +11023,10 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 int tl, tr, bl, br;
                 int minRad = dp(4);
                 int rad;
-                if (SharedConfig.bubbleRadius > 2) {
-                    rad = dp(SharedConfig.bubbleRadius - 2);
+                if (tw.nekomimi.nekogram.NekoConfig.getBubbleRadius() > 2) {
+                    rad = dp(tw.nekomimi.nekogram.NekoConfig.getBubbleRadius() - 2);
                 } else {
-                    rad = dp(SharedConfig.bubbleRadius);
+                    rad = dp(tw.nekomimi.nekogram.NekoConfig.getBubbleRadius());
                 }
                 int nearRad = Math.min(dp(3), rad);
                 tl = tr = bl = br = rad;
@@ -13464,11 +13464,11 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                         for (int a = 0; a < 4; a++) {
                             if (!instantTextNewLine) {
                                 if (a == (out ? 3 : 2)) {
-                                    radii[a * 2] = radii[a * 2 + 1] = dp(SharedConfig.bubbleRadius);
+                                    radii[a * 2] = radii[a * 2 + 1] = dp(tw.nekomimi.nekogram.NekoConfig.getBubbleRadius());
                                     continue;
                                 }
                                 if ((mediaBackground && currentPosition == null || pinnedBottom) && (a == 2 || a == 3)) {
-                                    radii[a * 2] = radii[a * 2 + 1] = dp(pinnedBottom ? Math.min(5, SharedConfig.bubbleRadius) : SharedConfig.bubbleRadius);
+                                    radii[a * 2] = radii[a * 2 + 1] = dp(pinnedBottom ? Math.min(5, tw.nekomimi.nekogram.NekoConfig.getBubbleRadius()) : tw.nekomimi.nekogram.NekoConfig.getBubbleRadius());
                                     continue;
                                 }
                             }
@@ -13793,17 +13793,17 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
 //        if (currentMessageObject != null && currentMessageObject.type == MessageObject.TYPE_ARTICLE) {
 //            pad += dp(4);
 //        }
-        if (SharedConfig.bubbleRadius >= 15) {
+        if (tw.nekomimi.nekogram.NekoConfig.getBubbleRadius() >= 15) {
             pad += dp(2);
-        } else if (SharedConfig.bubbleRadius >= 11) {
+        } else if (tw.nekomimi.nekogram.NekoConfig.getBubbleRadius() >= 11) {
             pad += dp(1);
         }
         return pad;
     }
 
     private int getExtraTimeX() {
-        if (!currentMessageObject.isOutOwner() && (!mediaBackground || captionLayout != null) && SharedConfig.bubbleRadius > 11) {
-            return dp((SharedConfig.bubbleRadius - 11) / 1.5f);
+        if (!currentMessageObject.isOutOwner() && (!mediaBackground || captionLayout != null) && tw.nekomimi.nekogram.NekoConfig.getBubbleRadius() > 11) {
+            return dp((tw.nekomimi.nekogram.NekoConfig.getBubbleRadius() - 11) / 1.5f);
         }
         if (!currentMessageObject.isOutOwner() && isPlayingRound && isAvatarVisible && currentMessageObject.type == MessageObject.TYPE_ROUND_VIDEO) {
             return (int) ((AndroidUtilities.roundPlayingMessageSize(isSideMenued) - AndroidUtilities.roundMessageSize) * 0.7f);
@@ -13856,7 +13856,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                         timeX += dp(4);
                     }
                 }
-                if (SharedConfig.bubbleRadius >= 10 && captionLayout == null && documentAttachType != DOCUMENT_ATTACH_TYPE_ROUND && documentAttachType != DOCUMENT_ATTACH_TYPE_STICKER) {
+                if (tw.nekomimi.nekogram.NekoConfig.getBubbleRadius() >= 10 && captionLayout == null && documentAttachType != DOCUMENT_ATTACH_TYPE_ROUND && documentAttachType != DOCUMENT_ATTACH_TYPE_STICKER) {
                     timeX -= dp(2);
                 }
             } else {
@@ -15593,7 +15593,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
 
             AndroidUtilities.rectTmp.set(linkX, linkPreviewY - dp(6), linkX + width, linkPreviewY + linkPreviewHeight + (drawInstantButtonInside && drawInstantView ? dp(42) : 0));
             linkLine.setLoading(loading);
-            float rad = (float) Math.floor(SharedConfig.bubbleRadius / (currentMessageObject.isSponsored() ? 2f : 3f));
+            float rad = (float) Math.floor(tw.nekomimi.nekogram.NekoConfig.getBubbleRadius() / (currentMessageObject.isSponsored() ? 2f : 3f));
             linkLine
                 .offsetEmoji(0, drawPhotoImageBefore ? (1f - isSmallImage()) * (dp(18) + photoImage.getImageHeight() + (siteNameLayout != null ? siteNameLayout.getLineBottom(siteNameLayout.getLineCount() - 1) : 0)) : 0)
                 .drawBackground(canvas, AndroidUtilities.rectTmp, rad, rad, rad, alpha, false, NekoConfig.reducedColors);
@@ -16502,7 +16502,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             }
             selectorDrawable[0].draw(canvas);
         }
-        float radF = (float) Math.floor(SharedConfig.bubbleRadius / 3f);
+        float radF = (float) Math.floor(tw.nekomimi.nekogram.NekoConfig.getBubbleRadius() / 3f);
         int rad = (int) radF;
         contactLine.drawBackground(canvas, contactRect, radF, radF, radF, 1f);
         contactLine.drawLine(canvas, contactRect, 1f);
@@ -16723,8 +16723,8 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     textY += dp(namesOffset <= 0 ? -3 : 2);
                 }
             } else {
-                if (currentMessageObject.hasCodeAtTop && SharedConfig.bubbleRadius > 10) {
-                    textY += dp(SharedConfig.bubbleRadius < 15 ? 1 : 2);
+                if (currentMessageObject.hasCodeAtTop && tw.nekomimi.nekogram.NekoConfig.getBubbleRadius() > 10) {
+                    textY += dp(tw.nekomimi.nekogram.NekoConfig.getBubbleRadius() < 15 ? 1 : 2);
                 }
                 if (currentMessageObject.hasCodeAtTop && namesOffset > 0) {
                     textY += dp(5);
@@ -17101,8 +17101,8 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                         if (block.hasCodeCopyButton) {
                             AndroidUtilities.rectTmp.bottom += dp(38);
                         }
-                        final float rightRad = block.first && namesOffset <= 0 && !caption ? ((!currentMessageObject.isOutOwner() || !pinnedTop) ? SharedConfig.bubbleRadius / 3f * 2f : Math.min(6, SharedConfig.bubbleRadius)) : Math.min(5, SharedConfig.bubbleRadius);;
-                        quoteLine.drawBackground(canvas, AndroidUtilities.rectTmp, 5, rightRad, Math.min(5, SharedConfig.bubbleRadius), alpha);
+                        final float rightRad = block.first && namesOffset <= 0 && !caption ? ((!currentMessageObject.isOutOwner() || !pinnedTop) ? tw.nekomimi.nekogram.NekoConfig.getBubbleRadius() / 3f * 2f : Math.min(6, tw.nekomimi.nekogram.NekoConfig.getBubbleRadius())) : Math.min(5, tw.nekomimi.nekogram.NekoConfig.getBubbleRadius());;
+                        quoteLine.drawBackground(canvas, AndroidUtilities.rectTmp, 5, rightRad, Math.min(5, tw.nekomimi.nekogram.NekoConfig.getBubbleRadius()), alpha);
                         if (block.languageHeight > 0) {
                             float wasBottom = AndroidUtilities.rectTmp.bottom;
                             AndroidUtilities.rectTmp.bottom = AndroidUtilities.rectTmp.top + block.languageHeight;
@@ -19752,7 +19752,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                         animatedEmojiReplyStack = AnimatedEmojiSpan.update(AnimatedEmojiDrawable.CACHE_TYPE_MESSAGES, this, false, animatedEmojiReplyStack, replyTextLayout);
                     }
                     if (replyNameWidth > replyTextWidth) {
-                        replyNameWidth += dp(Math.max(2, SharedConfig.bubbleRadius / 4f));
+                        replyNameWidth += dp(Math.max(2, tw.nekomimi.nekogram.NekoConfig.getBubbleRadius() / 4f));
                     }
                 } catch (Exception e) {
                     FileLog.e(e);
@@ -20611,18 +20611,18 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
 
             if (currentPosition != null) {
                 if ((currentPosition.flags & MessageObject.POSITION_FLAG_RIGHT) == 0) {
-                    backgroundDrawableRight += dp(SharedConfig.bubbleRadius + 2);
+                    backgroundDrawableRight += dp(tw.nekomimi.nekogram.NekoConfig.getBubbleRadius() + 2);
                 }
                 if ((currentPosition.flags & MessageObject.POSITION_FLAG_LEFT) == 0) {
-                    backgroundLeft -= dp(SharedConfig.bubbleRadius + 2);
-                    backgroundDrawableRight += dp(SharedConfig.bubbleRadius + 2);
+                    backgroundLeft -= dp(tw.nekomimi.nekogram.NekoConfig.getBubbleRadius() + 2);
+                    backgroundDrawableRight += dp(tw.nekomimi.nekogram.NekoConfig.getBubbleRadius() + 2);
                 }
                 if ((currentPosition.flags & MessageObject.POSITION_FLAG_TOP) == 0) {
-                    additionalTop -= dp(SharedConfig.bubbleRadius + 3);
-                    additionalBottom += dp(SharedConfig.bubbleRadius + 3);
+                    additionalTop -= dp(tw.nekomimi.nekogram.NekoConfig.getBubbleRadius() + 3);
+                    additionalBottom += dp(tw.nekomimi.nekogram.NekoConfig.getBubbleRadius() + 3);
                 }
                 if ((currentPosition.flags & MessageObject.POSITION_FLAG_BOTTOM) == 0) {
-                    additionalBottom += dp(SharedConfig.bubbleRadius + 3);
+                    additionalBottom += dp(tw.nekomimi.nekogram.NekoConfig.getBubbleRadius() + 3);
                 }
             }
             int offsetBottom;
@@ -20694,18 +20694,18 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             }
             if (currentPosition != null) {
                 if ((currentPosition.flags & MessageObject.POSITION_FLAG_RIGHT) == 0) {
-                    backgroundDrawableRight += dp(SharedConfig.bubbleRadius + 2);
+                    backgroundDrawableRight += dp(tw.nekomimi.nekogram.NekoConfig.getBubbleRadius() + 2);
                 }
                 if ((currentPosition.flags & MessageObject.POSITION_FLAG_LEFT) == 0) {
-                    backgroundDrawableLeft -= dp(SharedConfig.bubbleRadius + 2);
-                    backgroundDrawableRight += dp(SharedConfig.bubbleRadius + 2);
+                    backgroundDrawableLeft -= dp(tw.nekomimi.nekogram.NekoConfig.getBubbleRadius() + 2);
+                    backgroundDrawableRight += dp(tw.nekomimi.nekogram.NekoConfig.getBubbleRadius() + 2);
                 }
                 if ((currentPosition.flags & MessageObject.POSITION_FLAG_TOP) == 0) {
-                    additionalTop -= dp(SharedConfig.bubbleRadius + 3);
-                    additionalBottom += dp(SharedConfig.bubbleRadius + 3);
+                    additionalTop -= dp(tw.nekomimi.nekogram.NekoConfig.getBubbleRadius() + 3);
+                    additionalBottom += dp(tw.nekomimi.nekogram.NekoConfig.getBubbleRadius() + 3);
                 }
                 if ((currentPosition.flags & MessageObject.POSITION_FLAG_BOTTOM) == 0) {
-                    additionalBottom += dp(SharedConfig.bubbleRadius + 4);
+                    additionalBottom += dp(tw.nekomimi.nekogram.NekoConfig.getBubbleRadius() + 4);
                 }
             }
             int offsetBottom;
@@ -22821,7 +22821,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     restoreToCount = canvas.saveLayerAlpha(AndroidUtilities.rectTmp, (int) (0xFF * _alpha), Canvas.ALL_SAVE_FLAG);
                 }
 
-                float leftRad, rightRad, bottomRad = Math.min(4f, SharedConfig.bubbleRadius);
+                float leftRad, rightRad, bottomRad = Math.min(4f, tw.nekomimi.nekogram.NekoConfig.getBubbleRadius());
                 if (currentMessageObject.shouldDrawWithoutBackground()) {
                     rightRad = bottomRad = needDrawReplyBackground ? 6 : 4;
                     replySelectorRect.set(
@@ -22837,9 +22837,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     if (drawTopic || drawNameLayout || (drawForwardedName && forwardedNameLayout[0] != null)) {
                         rightRad = bottomRad;
                     } else if (!currentMessageObject.isOutOwner() || !drawPinnedTop) {
-                        rightRad = SharedConfig.bubbleRadius * .6f;
+                        rightRad = tw.nekomimi.nekogram.NekoConfig.getBubbleRadius() * .6f;
                     } else {
-                        rightRad = SharedConfig.bubbleRadius / 3f;
+                        rightRad = tw.nekomimi.nekogram.NekoConfig.getBubbleRadius() / 3f;
                     }
                     float right;
                     if (currentMessagesGroup == null || currentPosition == null || (currentPosition.flags & MessageObject.POSITION_FLAG_LEFT) != 0 && (currentPosition.flags & MessageObject.POSITION_FLAG_RIGHT) != 0) {
@@ -23097,7 +23097,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 final int textColor = summaryLine.check(currentMessageObject, currentUser, currentChat, resourcesProvider, ReplyMessageLine.TYPE_REPLY);
                 final int rippleColor = Theme.multAlpha(textColor, 0.15f);
 
-                final float rad = Math.min(4f, SharedConfig.bubbleRadius);
+                final float rad = Math.min(4f, tw.nekomimi.nekogram.NekoConfig.getBubbleRadius());
                 summaryLine.drawBackground(canvas, summarySelectorRect, rad, rad, rad, alpha * summaryAlpha, isReplyQuote, currentMessageObject.shouldDrawWithoutBackground());
 
                 if (summaryReplySelector == null) {
@@ -24123,7 +24123,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             if (documentAttachType != DOCUMENT_ATTACH_TYPE_ROUND && documentAttachType != DOCUMENT_ATTACH_TYPE_STICKER && currentMessageObject.type != MessageObject.TYPE_EMOJIS) {
                 int[] rad = photoImage.getRoundRadius();
                 r = Math.min(dp(8), Math.max(rad[2], rad[3]));
-                bigRadius = SharedConfig.bubbleRadius >= 10;
+                bigRadius = tw.nekomimi.nekogram.NekoConfig.getBubbleRadius() >= 10;
             } else {
                 r = dp(4) + (currentMessageObject != null && currentMessageObject.isAnyKindOfSticker() ? dp(8) : 0);
             }
@@ -24424,11 +24424,11 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
 
             if (videoInfoLayout != null && photoImage.getVisible() && imageBackgroundSideColor == 0) {
                 float rad;
-                if (SharedConfig.bubbleRadius > 2) {
-                    rad = dp(SharedConfig.bubbleRadius - 2);
-                    bigRadius = SharedConfig.bubbleRadius >= 10;
+                if (tw.nekomimi.nekogram.NekoConfig.getBubbleRadius() > 2) {
+                    rad = dp(tw.nekomimi.nekogram.NekoConfig.getBubbleRadius() - 2);
+                    bigRadius = tw.nekomimi.nekogram.NekoConfig.getBubbleRadius() >= 10;
                 } else {
-                    rad = dp(SharedConfig.bubbleRadius);
+                    rad = dp(tw.nekomimi.nekogram.NekoConfig.getBubbleRadius());
                 }
 
                 int x = (int) (photoImage.getImageX() + dp(9));
@@ -25096,7 +25096,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                         if (loadingProgressAlpha > 0) {
                             boolean bigRadius = false;
                             if (documentAttachType != DOCUMENT_ATTACH_TYPE_ROUND && documentAttachType != DOCUMENT_ATTACH_TYPE_STICKER && currentMessageObject.type != MessageObject.TYPE_EMOJIS) {
-                                bigRadius = SharedConfig.bubbleRadius >= 10;
+                                bigRadius = tw.nekomimi.nekogram.NekoConfig.getBubbleRadius() >= 10;
                             }
                             Theme.chat_infoPaint.setColor(getThemedColor(Theme.key_chat_mediaInfoText));
                             int x1 = (int) (photoImage.getImageX() + dp(4));

@@ -4,7 +4,6 @@ plugins {
     id 'com.android.application'
     id 'androidx.baselineprofile'
     id 'org.telegram.build-app-plugin'
-    id 'com.google.gms.google-services'
     id 'io.sentry.android.gradle'
 }
 
@@ -14,14 +13,32 @@ dependencies {
     baselineProfile project(':baselineprofile')
 }
 
+def freshgramProps = new Properties()
+def freshgramPropsFile = rootProject.file('local.properties')
+if (freshgramPropsFile.exists()) {
+    freshgramPropsFile.withInputStream { freshgramProps.load(it) }
+}
+def freshgramSentryDsn = freshgramProps.getProperty('sentryDsn', '')
+
 sentry {
-    uploadNativeSymbols = true
-    includeSourceContext = true
+    def sentryEnabled = freshgramSentryDsn != null && !freshgramSentryDsn.trim().isEmpty()
+    autoUpload = sentryEnabled
+    uploadNativeSymbols = sentryEnabled
+    includeSourceContext = sentryEnabled
     additionalSourceDirsForSourceContext = [ '../TMessagesProj/src/main/java' ]
     autoInstallation {
         enabled = false
     }
     ignoredBuildTypes = ["debug"]
+}
+
+// Без DSN нечего загружать в Sentry — отключаем задачи, иначе assembleRelease падает.
+tasks.configureEach { task ->
+    if (freshgramSentryDsn == null || freshgramSentryDsn.trim().isEmpty()) {
+        if (task.name.startsWith('uploadSentry') || task.name == 'sentryBundleSourcesRelease' || task.name == 'sentryGenerateProguardUuidRelease') {
+            task.enabled = false
+        }
+    }
 }
 
 android {
@@ -113,8 +130,12 @@ androidComponents {
             def abi = output.filters.find { it.filterType == FilterConfiguration.FilterType.ABI }?.identifier
             def abiName = abi ?: "universal"
             def baseVersionCode = output.versionCode.get()
-            output.outputFileName.set("Nekogram-${output.versionName.get()}-${baseVersionCode}-${abiName}.apk")
+            output.outputFileName.set("freshGram-${output.versionName.get()}-${baseVersionCode}-${abiName}.apk")
             output.versionCode.set(baseVersionCode * 10)
         }
     }
+}
+
+if (file('google-services.json').exists()) {
+    apply plugin: 'com.google.gms.google-services'
 }

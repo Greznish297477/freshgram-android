@@ -32,6 +32,8 @@ public class NekoAppearanceSettingsActivity extends BaseNekoSettingsActivity {
     private final int tabletModeRow = rowId++;
 
     private final int hideStoriesRow = rowId++;
+    private final int allowTabsReorderRow = rowId++;
+    private final int materialBubblesRow = rowId++;
     private final int mediaPreviewRow = rowId++;
     private final int miniSenderAvatarRow = rowId++;
 
@@ -40,10 +42,16 @@ public class NekoAppearanceSettingsActivity extends BaseNekoSettingsActivity {
     private final int tabsPositionRow = rowId++;
 
     private final int strokeOnViewsRow = rowId++;
+    private final int fontFamilyRow = rowId++;
 
     @Override
     protected void fillItems(ArrayList<UItem> items, UniversalAdapter adapter) {
         items.add(UItem.asHeader(LocaleController.getString(R.string.ChangeChannelNameColor2)));
+        items.add(TextSettingsCellFactory.of(fontFamilyRow, LocaleController.getString(R.string.FontFamily), switch (NekoConfig.fontFamily) {
+            case NekoConfig.FONT_FAMILY_GOOGLE_SANS -> LocaleController.getString(R.string.FontGoogleSans);
+            case NekoConfig.FONT_FAMILY_VAZIRMATN -> LocaleController.getString(R.string.FontVazirmatn);
+            default -> LocaleController.getString(R.string.FontSystem);
+        }).slug("fontFamily"));
         items.add(EmojiSetCellFactory.of(emojiSetsRow, LocaleController.getString(R.string.EmojiSets)).slug("emojiSets"));
         items.add(UItem.asCheck(predictiveBackAnimationRow, LocaleController.getString(R.string.PredictiveBackAnimation)).slug("predictiveBackAnimation").setChecked(NekoConfig.predictiveBackAnimation));
         items.add(UItem.asCheck(gooeyAvatarAnimationRow, LocaleController.getString(R.string.GooeyAvatarAnimation)).slug("gooeyAvatarAnimation").setChecked(NekoConfig.gooeyAvatarAnimation));
@@ -60,6 +68,8 @@ public class NekoAppearanceSettingsActivity extends BaseNekoSettingsActivity {
 
         items.add(UItem.asHeader(LocaleController.getString(R.string.SavedDialogsTab)));
         items.add(UItem.asCheck(hideStoriesRow, LocaleController.getString(R.string.HideStories)).slug("hideStories").setChecked(NekoConfig.hideStories));
+        items.add(UItem.asCheck(allowTabsReorderRow, LocaleController.getString(R.string.AllowTabsReorder), LocaleController.getString(R.string.AllowTabsReorderAbout)).slug("allowTabsReorder").setChecked(NekoConfig.allowTabsReorder));
+        items.add(UItem.asCheck(materialBubblesRow, LocaleController.getString(R.string.MaterialBubbles), LocaleController.getString(R.string.MaterialBubblesAbout)).slug("materialBubbles").setChecked(NekoConfig.materialBubbles));
         items.add(UItem.asCheck(mediaPreviewRow, LocaleController.getString(R.string.MediaPreview)).slug("mediaPreview").setChecked(NekoConfig.mediaPreview));
         items.add(UItem.asCheck(miniSenderAvatarRow, LocaleController.getString(R.string.MiniSenderAvatar)).slug("miniSenderAvatar").setChecked(NekoConfig.miniSenderAvatar));
         items.add(UItem.asShadow(null));
@@ -104,6 +114,20 @@ public class NekoAppearanceSettingsActivity extends BaseNekoSettingsActivity {
             });
         } else if (id == emojiSetsRow) {
             presentFragment(new NekoEmojiSettingsActivity());
+        } else if (id == fontFamilyRow) {
+            ArrayList<String> arrayList = new ArrayList<>();
+            ArrayList<Integer> types = new ArrayList<>();
+            arrayList.add(LocaleController.getString(R.string.FontSystem));
+            types.add(NekoConfig.FONT_FAMILY_SYSTEM);
+            arrayList.add(LocaleController.getString(R.string.FontGoogleSans));
+            types.add(NekoConfig.FONT_FAMILY_GOOGLE_SANS);
+            arrayList.add(LocaleController.getString(R.string.FontVazirmatn));
+            types.add(NekoConfig.FONT_FAMILY_VAZIRMATN);
+            showPopup(arrayList, types.indexOf(NekoConfig.fontFamily), item, view, i -> {
+                NekoConfig.setFontFamily(types.get(i));
+                listView.adapter.notifyItemChanged(position, PARTIAL);
+                NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.reloadInterface);
+            });
         } else if (id == disableNumberRoundingRow) {
             NekoConfig.toggleDisableNumberRounding();
             if (view instanceof TextCheckCell) {
@@ -120,6 +144,18 @@ public class NekoAppearanceSettingsActivity extends BaseNekoSettingsActivity {
             if (view instanceof TextCheckCell) {
                 ((TextCheckCell) view).setChecked(NekoConfig.mediaPreview);
             }
+        } else if (id == allowTabsReorderRow) {
+            NekoConfig.toggleAllowTabsReorder();
+            if (view instanceof TextCheckCell) {
+                ((TextCheckCell) view).setChecked(NekoConfig.allowTabsReorder);
+            }
+            showRestartBulletin();
+        } else if (id == materialBubblesRow) {
+            NekoConfig.toggleMaterialBubbles();
+            if (view instanceof TextCheckCell) {
+                ((TextCheckCell) view).setChecked(NekoConfig.materialBubbles);
+            }
+            AndroidUtilities.runOnUIThread(() -> NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.dialogsNeedReload));
         } else if (id == hideStoriesRow) {
             NekoConfig.toggleHideStories();
             if (view instanceof TextCheckCell) {

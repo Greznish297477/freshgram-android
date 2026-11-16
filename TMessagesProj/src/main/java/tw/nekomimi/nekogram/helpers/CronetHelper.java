@@ -11,9 +11,16 @@ import java.io.File;
 
 public class CronetHelper {
 
+    // На части прошивок (Huawei EMUI) инициализация Cronet из GMS убивает процесс
+    // на старте, поэтому используем OkHttp, пока это не будет исправлено.
+    public static final boolean ENABLED = false;
+
     private static CronetEngine engine = null;
 
     public static void init(Context context) {
+        if (!ENABLED) {
+            return;
+        }
         CronetProviderInstaller.installProvider(context)
                 .continueWith(task -> {
                     if (!task.isSuccessful() && task.getException() != null) {
@@ -43,7 +50,7 @@ public class CronetHelper {
     }
 
     public static boolean isAvailable() {
-        return engine != null;
+        return ENABLED && engine != null;
     }
 
     public static CronetEngine getEngine() {

@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="Nekogram" translatable="false">Nekogram</string>
-    <string name="NekogramBeta" translatable="false">Nekogram Beta</string>
-    <string name="NekoSettings">Neko Settings</string>
+    <string name="Nekogram" translatable="false">freshGram</string>
+    <string name="NekogramBeta" translatable="false">freshGram Beta</string>
+    <string name="NekoSettings">freshGram Settings</string>
     <string name="PreferIPv6">Prefer connecting through IPv6</string>
+    <string name="UseSystemDns">Use system DNS (VPN-friendly)</string>
+    <string name="UseSystemDnsAbout">Skip Google DNS-over-HTTPS and use the system resolver instead — helps when using VPN</string>
     <string name="MessageMenu">Message menu</string>
     <string name="HidePhone">Hide my phone number</string>
     <string name="DeleteAllFromSelf">Delete own messages</string>
@@ -24,7 +26,7 @@
     <string name="AddToSavedMessages">Save Message</string>
     <string name="CreateMention">Create Mention</string>
     <string name="Prpr">Peropero</string>
-    <string name="NekogramRunning">Nekogram is running</string>
+    <string name="NekogramRunning">freshGram is running</string>
     <string name="EventType">Sidebar icon set</string>
     <string name="DependsOnDate">Depends on date</string>
     <string name="Christmas">Christmas</string>
@@ -66,8 +68,8 @@
     <string name="IgnoreBlockedAbout">IT IS NOT REALLY HIDE! Messages are still available to view, but text will be converted to Spoiler and media won\'t auto download.</string>
     <string name="Donate">Donate</string>
     <string name="DonateAbout">Support our development.</string>
-    <string name="TranslationAbout">Help us to translate Nekogram to your language.</string>
-    <string name="Translation">Translate Nekogram</string>
+    <string name="TranslationAbout">Help us to translate freshGram to your language.</string>
+    <string name="Translation">Translate freshGram</string>
     <string name="GooglePlay">Google Play</string>
     <string name="ResetStickerSize">Reset sticker size</string>
     <string name="OfficialChannelUsername">nekoupdates</string>
@@ -83,7 +85,7 @@
     <string name="AutoPauseVideo">Auto pause video</string>
     <string name="AutoPauseVideoAbout">When lock screen/switch to background.</string>
     <string name="DisableProximityEvents">Disable proximity events</string>
-    <string name="Page1Message2">Nekogram is an **unofficial** messaging app\nthat uses Telegram\'s API.</string>
+    <string name="Page1Message2">freshGram is an **unofficial** messaging app\nthat uses Telegram\'s API.</string>
     <string name="MapDriftingFix">Map drifting fix for Mainland China</string>
     <string name="VoiceEnhancements">Voice enhancements</string>
     <string name="VoiceEnhancementsAbout">Noise Suppression and Voice Normalization</string>
@@ -118,7 +120,7 @@
     <string name="RegistrationDateNewer">Newer than %s</string>
     <string name="RegistrationDateOlder">Older than %s</string>
     <string name="RegistrationDateApproximately">Approximately %s</string>
-    <string name="UpdateNekogram">Update Nekogram</string>
+    <string name="UpdateNekogram">Update freshGram</string>
     <string name="TranslationTarget">Target language</string>
     <string name="TranslationTargetApp">Follow app</string>
     <string name="Translator">Translator</string>
@@ -142,11 +144,12 @@
     <string name="DisableGreetingSticker">Disable greeting sticker</string>
     <string name="DeleteAllFromSelfAdmin">With admin rights</string>
     <string name="OfficialSite">Official site</string>
+    <string name="FreshGramDesktop">freshGram Desktop</string>
     <string name="MutualContact">Mutual contact</string>
     <string name="MutualContactDescription">This contact is a mutual contact.</string>
-    <string name="InviteTextNeko">Hey, I\'m using Nekogram to chat. Join me! Download it here: %1$s</string>
-    <string name="ShareNekogram">Share Nekogram...</string>
-    <string name="NekogramVersion">Nekogram %1$s\nBased on Telegram %2$s\nDesigned by %3$s</string>
+    <string name="InviteTextNeko">Hey, I\'m using freshGram to chat. Join me! Download it here: %1$s</string>
+    <string name="ShareNekogram">Share freshGram...</string>
+    <string name="NekogramVersion">freshGram %1$s\nBased on Telegram %2$s\nDesigned by %3$s</string>
     <string name="UpdateInstalling">Installing update...</string>
     <string name="UpdateInstallingNotification">A notification will be shown when the update completes.</string>
     <string name="UpdateInstallingRelaunch">The app will relaunch when the update completes.</string>
@@ -169,7 +172,7 @@
     <string name="SaveToDownloadCount_few">Saving %1$d files to downloads</string>
     <string name="SaveToDownloadCount_many">Saving %1$d files to downloads</string>
     <string name="SaveToDownloadCount_other">Saving %1$d files to downloads</string>
-    <string name="AppLinkNotVerifiedMessage">For Android 12 and newer, you need to manually add link to verified links in order to open t.me links in Nekogram.</string>
+    <string name="AppLinkNotVerifiedMessage">For Android 12 and newer, you need to manually add link to verified links in order to open t.me links in freshGram.</string>
     <string name="AppLinkNotVerifiedTitle">App links not verified</string>
     <string name="AutoTranslate">Auto translate</string>
     <string name="AutoTranslateAbout">Automatically translate messages that are in another language.</string>
@@ -187,14 +190,14 @@
     <string name="TabletMode">Tablet mode</string>
     <string name="TabletModeAuto">Auto</string>
     <string name="DeleteAllFromSelfDone">All your messages are deleted</string>
-    <string name="UnknownNekoSettingsOption">There is no such Neko Settings option.</string>
+    <string name="UnknownNekoSettingsOption">There is no such freshGram Settings option.</string>
     <string name="ProviderYouDaoTranslate">YouDao Translator</string>
     <string name="ProviderBaiduTranslate">Baidu Translate</string>
     <string name="ProviderSogouTranslate">Sogou Translate</string>
     <string name="Translated">translated</string>
     <string name="PasscodeNeeded">You have to enable passcode lock first</string>
     <string name="PasscodeNeko">Passcode</string>
-    <string name="PasscodeShowInSettings">Show in Neko Settings</string>
+    <string name="PasscodeShowInSettings">Show in freshGram Settings</string>
     <string name="PasscodeShowInSettingsAbout">After hiding, you can **ONLY** open this page by link:</string>
     <string name="PasscodeSet">Set passcode</string>
     <string name="PasscodeEdit">Change passcode</string>
@@ -220,14 +223,19 @@
     <string name="MarkdownParseLinks">Parse links</string>
     <string name="MarkdownAbout">Edit text in messages using markdown: ^1**bold**^1, ^2__italic__^2, ^3~~strikethrough~~^3, ^4`monospace`^4, ^5||spoiler||^5, ^6text^7url^8.</string>
     <string name="MarkdownAbout2">Edit text in messages using markdown: ^1**bold**^1, ^2__italic__^2, ^3~~strikethrough~~^3, ^4`monospace`^4, ^5||spoiler||^5.</string>
-    <string name="AppIconOldSchool">Old School</string>
-    <string name="AppIconMerio">Merio</string>
-    <string name="AppIconRainbow">Rainbow</string>
-    <string name="AppIconMusheen">Musheen</string>
-    <string name="AppIconSpace">Space</string>
-    <string name="AppIconCloud">Cloud</string>
-    <string name="AppIconNeon">Neon</string>
-    <string name="AppIconMaterial">Material</string>
+    <string name="AppIconOldSchool">Extera</string>
+    <string name="AppIconMerio">Chibi 2</string>
+    <string name="AppIconRainbow">Discord</string>
+    <string name="AppIconMusheen">Extera 2</string>
+    <string name="AppIconSpace">Nothing</string>
+    <string name="AppIconCloud">Segment</string>
+    <string name="AppIconNeon">Spotify</string>
+    <string name="AppIconMaterial">YaPlus</string>
+    <string name="AppIconWheelOld">Wheel Old</string>
+    <string name="AppIconWin95">Win95</string>
+    <string name="MaterialBubbles">Material chat bubbles</string>
+    <string name="MaterialBubblesAbout">Rounded Material Design 3 style message bubbles</string>
+    <string name="AppIconMaterialDesign">Material</string>
     <string name="RecentChats">Recent chats</string>
     <string name="ClearRecentChats">Clear recent chats</string>
     <string name="ClearRecentChatAlert">Do you want to clear your recent chats?</string>
@@ -267,6 +275,8 @@
     <string name="ExportAsJson">Copy as JSON</string>
     <string name="ViewAsJson">View as JSON</string>
     <string name="HideStories">Hide Stories</string>
+    <string name="AllowTabsReorder">Reorder bottom tabs</string>
+    <string name="AllowTabsReorderAbout">Let drag on the bottom tab bar to change its order</string>
     <string name="QuickForward">Use quick forward menu</string>
     <string name="DidNotGetTheCodeBlameDurov">If you didn\'t get the code on another device or you don\'t have Telegram logged in on another device, please use the official Telegram app to receive the code.\n\nTelegram has **disabled the ability to log in with SMS** on third-party apps. Users logging into third-party apps are only able to receive login codes via Telegram.\n\nWe cannot help you with this, if you have any issues with logging in, please contact Telegram Support.</string>
     <string name="ChangePhoneNumberBlameDurov">Telegram has **disabled the ability to change phone number** on third-party apps. Users are only able to change phone number via Telegram.</string>
@@ -276,7 +286,7 @@
     <string name="NavigationAnimationBezier">Classic</string>
     <string name="NavigationAnimationSpring">Natural</string>
     <string name="CloudConfig">Cloud Settings</string>
-    <string name="CloudConfigDesc">Save your Neko Settings to Telegram cloud.</string>
+    <string name="CloudConfigDesc">Save your freshGram Settings to Telegram cloud.</string>
     <string name="CloudConfigSyncDate">Last synced: %s, cloud: %s</string>
     <string name="CloudConfigSyncDateNever">never</string>
     <string name="CloudConfigSync">Sync to cloud</string>
@@ -285,7 +295,7 @@
     <string name="CloudConfigRestoreShort">Restore</string>
     <string name="CloudConfigSyncing">Syncing...</string>
     <string name="CloudConfigAutoSync">Auto sync</string>
-    <string name="CloudConfigAutoSyncDesc">Sync to cloud automatically after making changes to Neko Settings.</string>
+    <string name="CloudConfigAutoSyncDesc">Sync to cloud automatically after making changes to freshGram Settings.</string>
     <string name="CloudConfigSyncFailed">Failed to sync settings to cloud.</string>
     <string name="CloudConfigRestoreFailed">Failed to restore settings from cloud.</string>
     <string name="ReducedColors">Reduce colors</string>
@@ -345,9 +355,42 @@
     <string name="PassQRNewPassword">Protect this QR code with a password</string>
     <string name="ConfirmNewPassword">Confirm Password</string>
     <string name="PassQRAbout">Saves your passkey as an encrypted QR code. You can scan it to log in on another device.</string>
-    <string name="PassQREncryption">Scan with Nekogram to log in.</string>
+    <string name="PassQREncryption">Scan with freshGram to log in.</string>
     <string name="InvalidPassQr">Invalid Passkey QR</string>
 
     <!-- Accessibility -->
     <string name="AccessibilitySettings">Accessibility settings</string>
+    <string name="IntroForkNotice">freshGram is an unofficial fork. The idea and original code belong to the authors of the original fork:</string>
+    <string name="FontFamily">Font family</string>
+    <string name="FontSystem">System</string>
+    <string name="FontGoogleSans">Google Sans</string>
+    <string name="FontVazirmatn">Vazirmatn</string>
+    <string name="AntiRecall">Anti-recall</string>
+    <string name="AntiRecallAbout">Keep deleted messages visible</string>
+    <string name="GhostMode">Ghost mode</string>
+    <string name="GhostModeAbout">Do not send read receipts and typing status</string>
+    <string name="PeekLastSeen">Peek last seen</string>
+    <string name="PeekLastSeenAbout">Temporarily go online when opening a profile to see exact last seen, then hide again</string>
+    <string name="KeepDeletedDialogs">Keep deleted chats</string>
+    <string name="KeepDeletedDialogsAbout">Deleted chats stay in the chat list</string>
+    <string name="StreamerMode">Streamer mode</string>
+    <string name="StreamerModeAbout">Hide personal information on screen</string>
+    <string name="UnlimitedSelection">Unlimited selection</string>
+    <string name="UnlimitedSelectionAbout">Select and delete more than 100 messages at once</string>
+    <string name="KeepEditHistory">Message edit history</string>
+    <string name="KeepEditHistoryAbout">Keep previous versions of edited messages</string>
+    <string name="HideSponsoredMessages">Hide sponsored messages</string>
+    <string name="HideSponsoredMessagesAbout">Do not show sponsored posts in channels</string>
+    <string name="KeepDeleteHistory">Save deleted messages</string>
+    <string name="KeepDeleteHistoryAbout">Keep deleted message text locally even without anti-recall</string>
+    <string name="DeletedMessagesMenu">Deleted messages</string>
+    <string name="DeleteLastNMessages">Delete last N messages</string>
+    <string name="DeleteForAllKeepLocal">Delete for everyone (keep locally)</string>
+    <string name="DeletedMessagesTitle">Deleted messages</string>
+    <string name="DeletedMessagesEmpty">No deleted messages saved for this chat</string>
+    <string name="HideForwardButton">Hide forward button</string>
+    <string name="HideForwardButtonAbout">Remove the forward action from the message menu</string>
+    <string name="MsgEditHistory">Edit history</string>
+    <string name="MsgEditHistoryEmpty">No previous versions saved</string>
+    <string name="CopyMessageId">Copy message ID</string>
 </resources>

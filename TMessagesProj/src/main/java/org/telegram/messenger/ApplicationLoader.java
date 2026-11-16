@@ -300,10 +300,14 @@ public class ApplicationLoader extends Application {
 
         super.onCreate();
 
+        android.util.Log.i("freshGram", "Application.onCreate: start");
         // AndroidUtilities must be initialized before FileLog
         final String helloWorld = AndroidUtilities.getHelloWorld();
+        android.util.Log.i("freshGram", "Application.onCreate: helloWorld done");
         AnalyticsHelper.start(this);
+        android.util.Log.i("freshGram", "Application.onCreate: analytics done");
         CronetHelper.init(this);
+        android.util.Log.i("freshGram", "Application.onCreate: cronet done");
 
         if (BuildVars.LOGS_ENABLED) {
             FileLog.d(helloWorld);
@@ -335,7 +339,9 @@ public class ApplicationLoader extends Application {
             applicationContext = getApplicationContext();
         }
 
+        android.util.Log.i("freshGram", "Application.onCreate: loading native libs");
         NativeLoader.initNativeLibs(ApplicationLoader.applicationContext);
+        android.util.Log.i("freshGram", "Application.onCreate: native libs loaded");
 
         try {
             ConnectionsManager.native_setJava(false);

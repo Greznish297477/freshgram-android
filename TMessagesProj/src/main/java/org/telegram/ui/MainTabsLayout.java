@@ -6,6 +6,8 @@ import static org.telegram.messenger.AndroidUtilities.lerp;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Canvas;
+import android.os.Handler;
+import android.os.Looper;
 import android.graphics.Paint;
 import android.view.MotionEvent;
 import android.view.View;
@@ -25,6 +27,7 @@ import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.AnimatedLinearLayout;
 import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.glass.GlassTabView;
+import tw.nekomimi.nekogram.NekoConfig;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -41,6 +44,40 @@ public class MainTabsLayout extends AnimatedLinearLayout {
     public MainTabsLayout(Context context, Theme.ResourcesProvider resourcesProvider) {
         super(context);
         this.resourcesProvider = resourcesProvider;
+    }
+
+    public interface OnTabsOrderChangedListener {
+        void onTabsOrderChanged();
+    }
+
+    private OnTabsOrderChangedListener tabsOrderChangedListener;
+    private View orderDragView;
+    private boolean orderMoved;
+
+    public void setTabsOrderChangedListener(OnTabsOrderChangedListener listener) {
+        this.tabsOrderChangedListener = listener;
+    }
+
+    private void moveChild(View a, View b) {
+        if (a == null || b == null || a == b) {
+            return;
+        }
+        final int ia = indexOfChild(a);
+        final int ib = indexOfChild(b);
+        if (ia < 0 || ib < 0 || ia == ib) {
+            return;
+        }
+        final boolean visible = isViewVisible(a);
+        final boolean movingRight = ia < ib;
+        removeView(a);
+        final int nb = indexOfChild(b);
+        if (nb < 0) {
+            setViewVisible(a, visible, false);
+            return;
+        }
+        final int insertAt = movingRight ? nb + 1 : nb;
+        addView(a, insertAt);
+        setViewVisible(a, visible, false);
     }
 
     private static final float[] PASS_TEXT_SIZES_DP = {12f, 12f, 10f};
@@ -465,6 +502,8 @@ public class MainTabsLayout extends AnimatedLinearLayout {
         public boolean onLongPressRequestedAt(View view, float x, float y) {
             checkPivot(view, x, y);
             isInLongPress = true;
+            orderDragView = findChildUnder(MainTabsLayout.this, x, y);
+            orderMoved = false;
             AndroidUtilities.cancelRunOnUIThread(restoreDrawSelector);
             setSkipDrawSelector(true);
             checkLongMove(x, y, true, false);
@@ -476,6 +515,13 @@ public class MainTabsLayout extends AnimatedLinearLayout {
         @Override
         public void onLongPressMove(View view, MotionEvent e, float x, float y, float startX, float startY) {
             checkPivot(view, x, y);
+            if (orderDragView != null) {
+                final View nearest = findNearestVisibleChildByX(x, MainTabsLayout.this);
+                if (nearest != null && nearest != orderDragView) {
+                    moveChild(orderDragView, nearest);
+                    orderMoved = true;
+                }
+            }
             checkLongMove(x, y, false, false);
             invalidate();
         }
@@ -491,9 +537,14 @@ public class MainTabsLayout extends AnimatedLinearLayout {
             checkLongMove(x, y, false, true);
             isInLongPress = false;
             AndroidUtilities.runOnUIThread(restoreDrawSelector, 450);
-            if (lastLongSelectedView != null) {
+            if (orderMoved) {
+                if (tabsOrderChangedListener != null) {
+                    tabsOrderChangedListener.onTabsOrderChanged();
+                }
+            } else if (lastLongSelectedView != null) {
                 lastLongSelectedView.performClick();
             }
+            orderDragView = null;
             lastLongSelectedView = null;
             invalidate();
             longTouchEnd();
@@ -505,6 +556,10 @@ public class MainTabsLayout extends AnimatedLinearLayout {
             checkLongMove(x, y, false, true);
             isInLongPress = false;
             AndroidUtilities.runOnUIThread(restoreDrawSelector, 450);
+            if (orderMoved && tabsOrderChangedListener != null) {
+                tabsOrderChangedListener.onTabsOrderChanged();
+            }
+            orderDragView = null;
             lastLongSelectedView = null;
             invalidate();
             longTouchEnd();
@@ -606,8 +661,56 @@ public class MainTabsLayout extends AnimatedLinearLayout {
     @Override
     public boolean dispatchTouchEvent(MotionEvent ev) {
         clickHelper.onTouchEvent(this, ev);
+
+        final int action = ev.getActionMasked();
+        if (action == MotionEvent.ACTION_DOWN) {
+            downX = ev.getX();
+            downY = ev.getY();
+            dragDetected = false;
+            dragMoved = false;
+            draggedView = null;
+            dragHandler.removeCallbacks(longPressRunnable);
+            if (NekoConfig.allowTabsReorder) {
+                dragHandler.postDelayed(longPressRunnable, 380);
+            }
+        } else if (action == MotionEvent.ACTION_MOVE) {
+            if (!dragDetected) {
+                if (Math.hypot(ev.getX() - downX, ev.getY() - downY) > dp(10)) {
+                    dragHandler.removeCallbacks(longPressRunnable);
+                }
+            } else if (draggedView != null) {
+                final View nearest = findNearestVisibleChildByX(ev.getX(), MainTabsLayout.this);
+                if (nearest != null && nearest != draggedView) {
+                    moveChild(draggedView, nearest);
+                    dragMoved = true;
+                }
+                invalidate();
+                return true;
+            }
+        } else if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
+            dragHandler.removeCallbacks(longPressRunnable);
+            if (dragDetected) {
+                if (dragMoved && tabsOrderChangedListener != null) {
+                    tabsOrderChangedListener.onTabsOrderChanged();
+                }
+                dragDetected = false;
+                draggedView = null;
+                return true;
+            }
+        }
+
         return super.dispatchTouchEvent(ev);
     }
+
+    private final Handler dragHandler = new Handler(Looper.getMainLooper());
+    private boolean dragDetected;
+    private boolean dragMoved;
+    private View draggedView;
+    private float downX, downY;
+    private final Runnable longPressRunnable = () -> {
+        dragDetected = true;
+        draggedView = findChildUnder(MainTabsLayout.this, downX, downY);
+    };
 
 
     private static float clampXToChildrenCenters(float x, ViewGroup parent) {

@@ -9,6 +9,7 @@ import com.google.gson.JsonParser;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
+import org.telegram.messenger.BuildVars;
 import org.telegram.ui.ActionBar.Theme;
 
 import java.util.Collections;
@@ -68,7 +69,7 @@ public class NekoConfig {
     public static int doubleTapOutAction = DOUBLE_TAP_ACTION_REACTION;
     public static int downloadSpeedBoost = BOOST_NONE;
     public static int idType = ID_TYPE_API;
-    public static int maxRecentStickers = 20;
+    public static int maxRecentStickers = 200;
     public static int nameOrder = 1;
     public static int tabletMode = TABLET_AUTO;
     public static int tabsTitleType = TITLE_TYPE_MIX;
@@ -94,9 +95,28 @@ public class NekoConfig {
     public static boolean disableVoiceMessageAutoPlay = false;
     public static boolean forceFontWeightFallback = false;
     public static boolean forceHttpStreaming = false;
+    public static final int FONT_FAMILY_SYSTEM = 0;
+    public static final int FONT_FAMILY_GOOGLE_SANS = 1;
+    public static final int FONT_FAMILY_VAZIRMATN = 2;
+    public static int fontFamily = FONT_FAMILY_SYSTEM;
     public static boolean formatTimeWithSeconds = false;
     public static boolean gooeyAvatarAnimation = true;
     public static boolean hideAllTab = false;
+    public static boolean antiRecall = false;
+    public static boolean ghostMode = false;
+    public static boolean keepDeletedDialogs = false;
+    public static boolean streamerMode = false;
+    public static boolean unlimitedSelection = false;
+    public static int[] mainTabsOrder = {0, 1, 2, 3};
+    public static boolean allowTabsReorder = true;
+    public static boolean keepEditHistory = true;
+    public static boolean hideSponsoredMessages = false;
+    public static boolean keepDeleteHistory = true;
+    public static boolean hideForwardButton = false;
+    public static boolean useSystemDns = false;
+    public static boolean useIpv4Fetch = false;
+    public static boolean peekLastSeen = false;
+    public static boolean materialBubbles = false;
     public static boolean hideBottomNavigationBar = false;
     public static boolean hideChannelBottomButtons = false;
     public static boolean hideKeyboardOnChatScroll = false;
@@ -177,7 +197,7 @@ public class NekoConfig {
             doubleTapOutAction = preferences.getInt("doubleTapOutAction", DOUBLE_TAP_ACTION_REACTION);
             downloadSpeedBoost = preferences.getInt("downloadSpeedBoost2", BOOST_NONE);
             idType = preferences.getInt("idType", ID_TYPE_API);
-            maxRecentStickers = preferences.getInt("maxRecentStickers", 20);
+            maxRecentStickers = preferences.getInt("maxRecentStickers", 200);
             nameOrder = preferences.getInt("nameOrder", 1);
             tabletMode = preferences.getInt("tabletMode", TABLET_AUTO);
             tabsTitleType = preferences.getInt("tabsTitleType2", TITLE_TYPE_MIX);
@@ -200,10 +220,26 @@ public class NekoConfig {
             disableProximityEvents = preferences.getBoolean("disableProximityEvents", false);
             disableVoiceMessageAutoPlay = preferences.getBoolean("disableVoiceMessageAutoPlay", false);
             forceFontWeightFallback = preferences.getBoolean("forceFontWeightFallback", false);
+            fontFamily = preferences.getInt("fontFamily", FONT_FAMILY_SYSTEM);
             forceHttpStreaming = preferences.getBoolean("forceHttpStreaming", false);
             formatTimeWithSeconds = preferences.getBoolean("formatTimeWithSeconds", false);
             gooeyAvatarAnimation = preferences.getBoolean("gooeyAvatarAnimation", true);
             hideAllTab = preferences.getBoolean("hideAllTab", false);
+            antiRecall = preferences.getBoolean("antiRecall", false);
+            ghostMode = preferences.getBoolean("ghostMode", false);
+            keepDeletedDialogs = preferences.getBoolean("keepDeletedDialogs", false);
+            streamerMode = preferences.getBoolean("streamerMode", false);
+            unlimitedSelection = preferences.getBoolean("unlimitedSelection", false);
+            mainTabsOrder = parseMainTabsOrderOrDefault(preferences.getString("mainTabsOrder", "0,1,2,3"));
+            allowTabsReorder = preferences.getBoolean("allowTabsReorder", true);
+            keepEditHistory = preferences.getBoolean("keepEditHistory", true);
+            hideSponsoredMessages = preferences.getBoolean("hideSponsoredMessages", false);
+            keepDeleteHistory = preferences.getBoolean("keepDeleteHistory", true);
+            hideForwardButton = preferences.getBoolean("hideForwardButton", false);
+            useSystemDns = preferences.getBoolean("useSystemDns", false);
+            useIpv4Fetch = preferences.getBoolean("useIpv4Fetch", false);
+            peekLastSeen = preferences.getBoolean("peekLastSeen", false);
+            materialBubbles = preferences.getBoolean("materialBubbles", false);
             hideBottomNavigationBar = preferences.getBoolean("hideBottomNavigationBar", false);
             hideChannelBottomButtons = preferences.getBoolean("hideChannelBottomButtons", false);
             hideKeyboardOnChatScroll = preferences.getBoolean("hideKeyboardOnChatScroll", false);
@@ -258,6 +294,21 @@ public class NekoConfig {
             LensHelper.checkLensSupportAsync();
             preferences.registerOnSharedPreferenceChangeListener(listener);
 
+            applyMaterialBubblesRadius();
+
+            // freshGram Lite: приватные «фичи-хуки» отключены (для Google Play).
+            if (BuildVars.LITE) {
+                antiRecall = false;
+                ghostMode = false;
+                keepDeletedDialogs = false;
+                streamerMode = false;
+                keepEditHistory = false;
+                keepDeleteHistory = false;
+                hideSponsoredMessages = false;
+                unlimitedSelection = false;
+                peekLastSeen = false;
+            }
+
             configLoaded = true;
         }
     }
@@ -280,7 +331,7 @@ public class NekoConfig {
             object.addProperty("idType", preferences.getInt("idType", ID_TYPE_API));
         }
         if (preferences.contains("maxRecentStickers")) {
-            object.addProperty("maxRecentStickers", preferences.getInt("maxRecentStickers", 20));
+            object.addProperty("maxRecentStickers", preferences.getInt("maxRecentStickers", 200));
         }
         if (preferences.contains("nameOrder")) {
             object.addProperty("nameOrder", preferences.getInt("nameOrder", 1));
@@ -347,6 +398,17 @@ public class NekoConfig {
         }
         if (preferences.contains("forceFontWeightFallback")) {
             object.addProperty("forceFontWeightFallback", preferences.getBoolean("forceFontWeightFallback", false));
+        }
+        object.addProperty("fontFamily", preferences.getInt("fontFamily", FONT_FAMILY_SYSTEM));
+        for (String key : new String[]{"antiRecall", "ghostMode", "keepDeletedDialogs", "streamerMode",
+                "unlimitedSelection", "keepEditHistory", "hideSponsoredMessages", "keepDeleteHistory",
+                "allowTabsReorder", "hideForwardButton", "useSystemDns", "useIpv4Fetch", "peekLastSeen", "materialBubbles"}) {
+            if (preferences.contains(key)) {
+                object.addProperty(key, preferences.getBoolean(key, "keepEditHistory".equals(key) || "keepDeleteHistory".equals(key) || "allowTabsReorder".equals(key)));
+            }
+        }
+        if (preferences.contains("mainTabsOrder")) {
+            object.addProperty("mainTabsOrder", preferences.getString("mainTabsOrder", "0,1,2,3"));
         }
         if (preferences.contains("forceHttpStreaming")) {
             object.addProperty("forceHttpStreaming", preferences.getBoolean("forceHttpStreaming", false));
@@ -607,6 +669,19 @@ public class NekoConfig {
         }
         if (object.has("forceFontWeightFallback")) {
             editor.putBoolean("forceFontWeightFallback", object.get("forceFontWeightFallback").getAsBoolean());
+        }
+        if (object.has("fontFamily")) {
+            editor.putInt("fontFamily", object.get("fontFamily").getAsInt());
+        }
+        for (String key : new String[]{"antiRecall", "ghostMode", "keepDeletedDialogs", "streamerMode",
+                "unlimitedSelection", "keepEditHistory", "hideSponsoredMessages", "keepDeleteHistory",
+                "allowTabsReorder", "hideForwardButton", "useSystemDns", "useIpv4Fetch", "peekLastSeen", "materialBubbles"}) {
+            if (object.has(key)) {
+                editor.putBoolean(key, object.get(key).getAsBoolean());
+            }
+        }
+        if (object.has("mainTabsOrder")) {
+            editor.putString("mainTabsOrder", object.get("mainTabsOrder").getAsString());
         }
         if (object.has("forceHttpStreaming")) {
             editor.putBoolean("forceHttpStreaming", object.get("forceHttpStreaming").getAsBoolean());
@@ -917,6 +992,16 @@ public class NekoConfig {
         preferences.edit().putBoolean("forceFontWeightFallback", forceFontWeightFallback).apply();
     }
 
+    public static void toggleFontFamily() {
+        fontFamily = (fontFamily + 1) % 3;
+        preferences.edit().putInt("fontFamily", fontFamily).apply();
+    }
+
+    public static void setFontFamily(int value) {
+        fontFamily = value;
+        preferences.edit().putInt("fontFamily", fontFamily).apply();
+    }
+
     public static void setForceHttpStreaming(boolean value) {
         forceHttpStreaming = value;
         preferences.edit().putBoolean("forceHttpStreaming", value).apply();
@@ -935,6 +1020,166 @@ public class NekoConfig {
     public static void toggleHideAllTab() {
         hideAllTab = !hideAllTab;
         preferences.edit().putBoolean("hideAllTab", hideAllTab).apply();
+    }
+
+    public static void toggleAntiRecall() {
+        antiRecall = !antiRecall;
+        preferences.edit().putBoolean("antiRecall", antiRecall).apply();
+    }
+
+    public static void toggleGhostMode() {
+        ghostMode = !ghostMode;
+        preferences.edit().putBoolean("ghostMode", ghostMode).apply();
+    }
+
+    public static void toggleKeepDeletedDialogs() {
+        keepDeletedDialogs = !keepDeletedDialogs;
+        preferences.edit().putBoolean("keepDeletedDialogs", keepDeletedDialogs).apply();
+    }
+
+    public static void toggleStreamerMode() {
+        streamerMode = !streamerMode;
+        preferences.edit().putBoolean("streamerMode", streamerMode).apply();
+    }
+
+    public static void toggleUnlimitedSelection() {
+        unlimitedSelection = !unlimitedSelection;
+        preferences.edit().putBoolean("unlimitedSelection", unlimitedSelection).apply();
+    }
+
+    public static void toggleKeepEditHistory() {
+        keepEditHistory = !keepEditHistory;
+        preferences.edit().putBoolean("keepEditHistory", keepEditHistory).apply();
+    }
+
+    public static void toggleHideSponsoredMessages() {
+        hideSponsoredMessages = !hideSponsoredMessages;
+        preferences.edit().putBoolean("hideSponsoredMessages", hideSponsoredMessages).apply();
+    }
+
+    public static void toggleKeepDeleteHistory() {
+        keepDeleteHistory = !keepDeleteHistory;
+        preferences.edit().putBoolean("keepDeleteHistory", keepDeleteHistory).apply();
+    }
+
+    public static void toggleHideForwardButton() {
+        hideForwardButton = !hideForwardButton;
+        preferences.edit().putBoolean("hideForwardButton", hideForwardButton).apply();
+    }
+
+    public static void toggleUseSystemDns() {
+        useSystemDns = !useSystemDns;
+        preferences.edit().putBoolean("useSystemDns", useSystemDns).apply();
+    }
+
+    public static void toggleUseIpv4Fetch() {
+        useIpv4Fetch = !useIpv4Fetch;
+        preferences.edit().putBoolean("useIpv4Fetch", useIpv4Fetch).apply();
+    }
+
+    public static void togglePeekLastSeen() {
+        peekLastSeen = !peekLastSeen;
+        preferences.edit().putBoolean("peekLastSeen", peekLastSeen).apply();
+    }
+
+    public static void toggleMaterialBubbles() {
+        materialBubbles = !materialBubbles;
+        preferences.edit().putBoolean("materialBubbles", materialBubbles).apply();
+        applyMaterialBubblesRadius();
+    }
+
+    /** Применяет (или снимает) увеличенный радиус пузырей в SharedConfig,
+     *  чтобы его подхватили ВСЕ места отрисовки (ChatMessageCell, RichMessageLayout и т.д.). */
+    public static void applyMaterialBubblesRadius() {
+        org.telegram.messenger.SharedConfig sc = null;
+        try {
+            if (materialBubbles) {
+                if (!preferences.contains("savedBubbleRadius")) {
+                    preferences.edit().putInt("savedBubbleRadius", org.telegram.messenger.SharedConfig.bubbleRadius).apply();
+                }
+                int target = Math.max(org.telegram.messenger.SharedConfig.bubbleRadius, 24);
+                org.telegram.messenger.SharedConfig.bubbleRadius = target;
+                preferences.edit().putInt("bubbleRadius", target).apply();
+            } else {
+                int saved = preferences.getInt("savedBubbleRadius", org.telegram.messenger.SharedConfig.bubbleRadius);
+                if (preferences.contains("savedBubbleRadius")) {
+                    org.telegram.messenger.SharedConfig.bubbleRadius = saved;
+                    preferences.edit().putInt("bubbleRadius", saved).remove("savedBubbleRadius").apply();
+                }
+            }
+        } catch (Throwable ignore) {
+        }
+    }
+
+    /** Эффективный радиус пузырей с учётом Materialgram-режима. */
+    public static int getBubbleRadius() {
+        if (materialBubbles) {
+            return Math.max(org.telegram.messenger.SharedConfig.bubbleRadius, 24);
+        }
+        return org.telegram.messenger.SharedConfig.bubbleRadius;
+    }
+
+    /** Радиус «хвостика» угла (в Material-режиме все углы одинаковые). */
+    public static int getNearBubbleRadius() {
+        if (materialBubbles) {
+            return Math.max(org.telegram.messenger.SharedConfig.bubbleRadius, 24);
+        }
+        return Math.min(6, org.telegram.messenger.SharedConfig.bubbleRadius);
+    }
+
+    public static void toggleAllowTabsReorder() {
+        allowTabsReorder = !allowTabsReorder;
+        preferences.edit().putBoolean("allowTabsReorder", allowTabsReorder).apply();
+    }
+
+    public static void setMainTabsOrder(int[] order) {
+        if (order == null || order.length != 4) {
+            return;
+        }
+        boolean[] seen = new boolean[4];
+        int[] copy = new int[4];
+        for (int i = 0; i < 4; i++) {
+            if (order[i] < 0 || order[i] > 3 || seen[order[i]]) {
+                return;
+            }
+            seen[order[i]] = true;
+            copy[i] = order[i];
+        }
+        mainTabsOrder = copy;
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 4; i++) {
+            if (i > 0) {
+                sb.append(',');
+            }
+            sb.append(copy[i]);
+        }
+        preferences.edit().putString("mainTabsOrder", sb.toString()).apply();
+    }
+
+    private static int[] parseMainTabsOrderOrDefault(String s) {
+        int[] def = {0, 1, 2, 3};
+        if (s == null || s.length() == 0) {
+            return def;
+        }
+        String[] parts = s.split(",");
+        if (parts.length != 4) {
+            return def;
+        }
+        int[] order = new int[4];
+        boolean[] seen = new boolean[4];
+        try {
+            for (int i = 0; i < 4; i++) {
+                int v = Integer.parseInt(parts[i].trim());
+                if (v < 0 || v > 3 || seen[v]) {
+                    return def;
+                }
+                seen[v] = true;
+                order[i] = v;
+            }
+        } catch (NumberFormatException e) {
+            return def;
+        }
+        return order;
     }
 
     public static void toggleHideBottomNavigationBar() {

@@ -26,6 +26,7 @@ import tw.nekomimi.nekogram.translator.deepl.DeepLOAuth;
 public class NekoGeneralSettingsActivity extends BaseNekoSettingsActivity {
 
     private final int ipv6Row = rowId++;
+    private final int systemDnsRow = rowId++;
 
     private final int showOriginalRow = rowId++;
     private final int translatorTypeRow = rowId++;
@@ -129,6 +130,7 @@ public class NekoGeneralSettingsActivity extends BaseNekoSettingsActivity {
     protected void fillItems(ArrayList<UItem> items, UniversalAdapter adapter) {
         items.add(UItem.asHeader(LocaleController.getString(R.string.Connection)));
         items.add(UItem.asCheck(ipv6Row, LocaleController.getString(R.string.PreferIPv6)).slug("ipv6").setChecked(NekoConfig.preferIPv6));
+        items.add(UItem.asCheck(systemDnsRow, LocaleController.getString(R.string.UseSystemDns), LocaleController.getString(R.string.UseSystemDnsAbout)).slug("useSystemDns").setChecked(NekoConfig.useSystemDns));
         items.add(UItem.asShadow(null));
 
         items.add(UItem.asHeader(LocaleController.getString(R.string.Translator)));

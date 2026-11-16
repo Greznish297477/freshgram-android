@@ -68,6 +68,27 @@ Install with:
 adb install -r freshGram-13.1.1-7237-full-universal.apk
 ```
 
+## Automatic updates from GitHub
+
+freshGram checks its own GitHub Releases for updates, so you don't need the Play
+Store or a new APK download by hand:
+
+- The app queries
+  `https://api.github.com/repos/Greznish297477/freshgram-android/releases/latest`.
+- It compares the latest release version with the installed one and picks the
+  asset that matches your CPU ABI and build variant (**full** or **lite**).
+- When a newer release is available it shows a dialog with the release notes;
+  **Download Now** fetches the APK inside the app and hands it to the system
+  installer (`REQUEST_INSTALL_PACKAGES` is already declared).
+- You can trigger a manual check from **freshGram Settings → Experimental →
+  Check for update**; the automatic check runs at most once a day.
+
+> If you rename the repository or move the project to another owner, update
+> `REPO_OWNER` / `REPO_NAME` in
+> `TMessagesProj/src/main/java/tw/nekomimi/nekogram/helpers/FreshgramUpdater.java`.
+> Updates only work for releases that contain the `freshGram-*-<variant>-<abi>.apk`
+> assets, which the release workflow produces automatically.
+
 ## Building
 
 ### Requirements

@@ -393,4 +393,9 @@
     <string name="MsgEditHistory">Edit history</string>
     <string name="MsgEditHistoryEmpty">No previous versions saved</string>
     <string name="CopyMessageId">Copy message ID</string>
+
+    <!-- GitHub auto-update -->
+    <string name="FreshgramUpdateAvailable">freshGram %1$s is available</string>
+    <string name="FreshgramUpdateError">Failed to check for updates. Please try again later.</string>
+    <string name="FreshgramUpdateAllowInstall">Allow installing apps from freshGram to install the update</string>
 </resources>

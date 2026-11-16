@@ -88,3 +88,12 @@ gh release create v13.1.1 dist/*.apk \
 full и lite имеют **один** `applicationId` (`app.freshgram.android`).
 Поэтому пользователь ставит **одну** из версий; рядом они не встанут,
 и в Google Play можно загрузить только одну.
+
+## Автообновление
+
+Приложение само проверяет GitHub Releases и скачивает APK под свой ABI и вариант
+(full/lite) — см. `TMessagesProj/src/main/java/tw/nekomimi/nekogram/helpers/FreshgramUpdater.java`.
+От вас требуется только публиковать релизы с APK-файлами (workflow это делает).
+
+Если репозиторий переименован/перенесён — обновите `REPO_OWNER` и `REPO_NAME`
+в этом файле. Владелец по умолчанию: `Greznish297477/freshgram-android`.

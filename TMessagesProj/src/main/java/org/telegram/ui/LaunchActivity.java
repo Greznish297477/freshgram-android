@@ -6102,6 +6102,10 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         if (!force && !BuildVars.CHECK_UPDATES) {
             return;
         }
+        if (BuildVars.UPDATE_FROM_GITHUB) {
+            tw.nekomimi.nekogram.helpers.FreshgramUpdater.checkForUpdates(this, force, progress);
+            return;
+        }
         if (ApplicationLoader.applicationLoaderInstance.isCustomUpdate()) {
             final BetaUpdate prevUpdate = ApplicationLoader.applicationLoaderInstance.getUpdate();
             final boolean first = firstAppUpdateCheck;

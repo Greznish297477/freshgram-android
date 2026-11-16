@@ -27,6 +27,8 @@ public class BuildVars {
     public static boolean LITE = BuildConfig.FRESHGRAM_LITE;
     public static boolean USE_CLOUD_STRINGS = true;
     public static boolean CHECK_UPDATES = true;
+    /** Обновления берём из GitHub Releases проекта freshGram. */
+    public static boolean UPDATE_FROM_GITHUB = true;
     public static boolean NO_SCOPED_STORAGE = Build.VERSION.SDK_INT <= 29;
     public static String BUILD_VERSION_STRING = BuildConfig.BUILD_VERSION_STRING;
 

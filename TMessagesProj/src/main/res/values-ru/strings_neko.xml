@@ -389,4 +389,9 @@
     <string name="MsgEditHistory">История правок</string>
     <string name="MsgEditHistoryEmpty">Прежних версий не сохранено</string>
     <string name="CopyMessageId">Скопировать ID сообщения</string>
+
+    <!-- GitHub auto-update -->
+    <string name="FreshgramUpdateAvailable">Доступна freshGram %1$s</string>
+    <string name="FreshgramUpdateError">Не удалось проверить обновления. Попробуйте позже.</string>
+    <string name="FreshgramUpdateAllowInstall">Разрешите установку приложений из freshGram, чтобы обновиться</string>
 </resources>

@@ -156,9 +156,13 @@ git push origin v13.1.2
 freshGram-13.1.2-7238-full-universal.apk
 freshGram-13.1.2-7238-full-arm64-v8a.apk
 freshGram-13.1.2-7238-full-armeabi-v7a.apk
+freshGram-13.1.2-7238-full-x86.apk
+freshGram-13.1.2-7238-full-x86_64.apk
 freshGram-13.1.2-7238-lite-universal.apk
 freshGram-13.1.2-7238-lite-arm64-v8a.apk
 freshGram-13.1.2-7238-lite-armeabi-v7a.apk
+freshGram-13.1.2-7238-lite-x86.apk
+freshGram-13.1.2-7238-lite-x86_64.apk
 ```
 
 Локальная альтернатива (уже собранные APK из `dist/`):

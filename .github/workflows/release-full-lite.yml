@@ -180,8 +180,13 @@ jobs:
             | `freshGram-*-full-universal.apk` | full | Все ABI, полный набор функций |
             | `freshGram-*-full-arm64-v8a.apk` | full | Только arm64 (современные телефоны) |
             | `freshGram-*-full-armeabi-v7a.apk` | full | Только armv7 |
+            | `freshGram-*-full-x86.apk` / `-x86_64.apk` | full | Эмуляторы и x86-устройства |
             | `freshGram-*-lite-universal.apk` | lite | Все ABI, без приватных фич (для Google Play) |
             | `freshGram-*-lite-arm64-v8a.apk` | lite | Только arm64 |
+            | `freshGram-*-lite-armeabi-v7a.apk` | lite | Только armv7 |
+            | `freshGram-*-lite-x86.apk` / `-x86_64.apk` | lite | Эмуляторы и x86-устройства |
+
+            Если не знаете свой ABI — берите `universal`: он работает везде, но весит больше.
 
             **full vs lite.** Lite собран с `-PfreshgramLite=true`: отключены анти-удаление,
             режим призрака, «оставлять удалённые чаты», режим стримера, история правок,

@@ -73,7 +73,7 @@ SHA256: 27:16:BC:1C:DB:AA:D0:D2:FB:9E:7D:FE:21:87:70:9C:36:5F:2C:6F:4B:CF:36:44:
 `TMessagesProj/jni/colorado/colorado.h`):
 
 ```powershell
-.\tools\keystore-check.ps1 -Keystore C:\keys\freshgram-release.jks -Alias freshgram -CopyToClipboard
+.\Tools\keystore-check.ps1 -Keystore C:\keys\freshgram-release.jks -Alias freshgram -CopyToClipboard
 ```
 
 Скрипт печатает сертификат, сверяет его с `colorado.h` и **кладёт base64

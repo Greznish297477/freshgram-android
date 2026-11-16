@@ -19,6 +19,9 @@ TMessagesProj/jni/ffmpeg/build_android
 
 keystore.jks
 *.jks
+*.keystore
+*.b64
+ks.b64
 sentry.properties
 
 # артефакты сборки/релизов — выкладываются в GitHub Releases, не в git

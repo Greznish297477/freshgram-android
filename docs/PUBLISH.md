@@ -146,26 +146,26 @@ git add .github/workflows/release-full-lite.yml .gitignore
 git commit -m "ci: build full + lite releases"
 git push
 
-git tag v13.1.1
-git push origin v13.1.1
+git tag v13.1.2
+git push origin v13.1.2
 ```
 
 Пуш тега запускает сборку. Через ~20–40 минут в `Releases` появятся файлы:
 
 ```
-freshGram-13.1.1-7237-full-universal.apk
-freshGram-13.1.1-7237-full-arm64-v8a.apk
-freshGram-13.1.1-7237-full-armeabi-v7a.apk
-freshGram-13.1.1-7237-lite-universal.apk
-freshGram-13.1.1-7237-lite-arm64-v8a.apk
-freshGram-13.1.1-7237-lite-armeabi-v7a.apk
+freshGram-13.1.2-7238-full-universal.apk
+freshGram-13.1.2-7238-full-arm64-v8a.apk
+freshGram-13.1.2-7238-full-armeabi-v7a.apk
+freshGram-13.1.2-7238-lite-universal.apk
+freshGram-13.1.2-7238-lite-arm64-v8a.apk
+freshGram-13.1.2-7238-lite-armeabi-v7a.apk
 ```
 
 Локальная альтернатива (уже собранные APK из `dist/`):
 
 ```bash
-gh release create v13.1.1 dist/*.apk \
-  --title "freshGram 13.1.1 (full + lite)" \
+gh release create v13.1.2 dist/*.apk \
+  --title "freshGram 13.1.2 (full + lite)" \
   --notes-file dist/README.md
 ```
 

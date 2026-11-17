@@ -12,9 +12,11 @@ import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.BuildVars;
 import org.telegram.ui.ActionBar.Theme;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import tw.nekomimi.nekogram.helpers.AnalyticsHelper;
@@ -109,6 +111,11 @@ public class NekoConfig {
     public static boolean unlimitedSelection = false;
     public static int[] mainTabsOrder = {0, 1, 2, 3};
     public static boolean allowTabsReorder = true;
+    /**
+     * Client-side "local pins": chats pinned on this device only. They are not sent to the server and
+     * are shown mixed into the pinned block of the chat list, looking exactly like real pins.
+     */
+    public static final ArrayList<Long> localPins = new ArrayList<>();
     public static boolean keepEditHistory = true;
     public static boolean hideSponsoredMessages = false;
     public static boolean keepDeleteHistory = true;
@@ -232,6 +239,8 @@ public class NekoConfig {
             unlimitedSelection = preferences.getBoolean("unlimitedSelection", false);
             mainTabsOrder = parseMainTabsOrderOrDefault(preferences.getString("mainTabsOrder", "0,1,2,3"));
             allowTabsReorder = preferences.getBoolean("allowTabsReorder", true);
+            localPins.clear();
+            localPins.addAll(parseLocalPins(preferences.getString("localPins", "")));
             keepEditHistory = preferences.getBoolean("keepEditHistory", true);
             hideSponsoredMessages = preferences.getBoolean("hideSponsoredMessages", false);
             keepDeleteHistory = preferences.getBoolean("keepDeleteHistory", true);
@@ -1180,6 +1189,79 @@ public class NekoConfig {
             return def;
         }
         return order;
+    }
+
+    public static boolean isLocalPin(long dialogId) {
+        return localPins.contains(dialogId);
+    }
+
+    public static int getLocalPinIndex(long dialogId) {
+        return localPins.indexOf(dialogId);
+    }
+
+    public static int getLocalPinsCount() {
+        return localPins.size();
+    }
+
+    public static void setLocalPin(long dialogId, boolean pin) {
+        if (pin) {
+            if (!localPins.contains(dialogId)) {
+                localPins.add(dialogId);
+            }
+        } else {
+            localPins.remove(dialogId);
+        }
+        saveLocalPins();
+    }
+
+    public static void toggleLocalPin(long dialogId) {
+        setLocalPin(dialogId, !localPins.contains(dialogId));
+    }
+
+    /**
+     * Drops local pins for chats that are no longer in the dialog list (deleted/left) so the stored
+     * list does not grow forever.
+     */
+    public static void pruneLocalPins() {
+        if (localPins.isEmpty()) {
+            return;
+        }
+        boolean changed = false;
+        var controller = org.telegram.messenger.MessagesController.getInstance(0);
+        for (int i = localPins.size() - 1; i >= 0; i--) {
+            if (controller.dialogs_dict.get(localPins.get(i)) == null) {
+                localPins.remove(i);
+                changed = true;
+            }
+        }
+        if (changed) {
+            saveLocalPins();
+        }
+    }
+
+    private static void saveLocalPins() {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < localPins.size(); i++) {
+            if (i > 0) {
+                sb.append(',');
+            }
+            sb.append(localPins.get(i));
+        }
+        preferences.edit().putString("localPins", sb.toString()).apply();
+    }
+
+    private static List<Long> parseLocalPins(String s) {
+        var result = new ArrayList<Long>();
+        if (s == null || s.length() == 0) {
+            return result;
+        }
+        for (String part : s.split(",")) {
+            try {
+                result.add(Long.parseLong(part.trim()));
+            } catch (NumberFormatException ignore) {
+            }
+        }
+        return result;
     }
 
     public static void toggleHideBottomNavigationBar() {

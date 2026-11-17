@@ -590,6 +590,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     @Nullable
     private ActionBarMenuSubItem pin2Item;
     @Nullable
+    private ActionBarMenuSubItem localPin2Item;
+    @Nullable
     private ActionBarMenuSubItem addToFolderItem;
     @Nullable
     private ActionBarMenuSubItem removeFromFolderItem;
@@ -723,6 +725,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     private final static int add_to_folder = 109;
     private final static int remove_from_folder = 110;
     private final static int community_ungroup = 111;
+    private final static int localpin = 112;
 
     private final static int ARCHIVE_ITEM_STATE_PINNED = 0;
     private final static int ARCHIVE_ITEM_STATE_SHOWED = 1;
@@ -4032,7 +4035,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                         undoView.showWithAction(did, UndoView.ACTION_REMOVED_FROM_FOLDER, neverShow.size(), filter, null, null);
                     }
                     hideActionMode(false);
-                } else if (id == pin || id == read || id == delete || id == clear || id == mute || id == archive || id == block || id == archive2 || id == pin2) {
+                } else if (id == pin || id == read || id == delete || id == clear || id == mute || id == archive || id == block || id == archive2 || id == pin2 || id == localpin) {
                     performSelectedDialogsAction(selectedDialogs, id, true, false);
                 }
             }
@@ -6824,6 +6827,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         actionMode.addView(new View(getContext()), LayoutHelper.createLinear(5, LayoutHelper.MATCH_PARENT));
         archiveItem = otherItem.addSubItem(archive, R.drawable.msg_archive, LocaleController.getString(R.string.Archive));
         pin2Item = otherItem.addSubItem(pin2, R.drawable.msg_pin, LocaleController.getString(R.string.DialogPin));
+        localPin2Item = otherItem.addSubItem(localpin, R.drawable.msg_pin, LocaleController.getString(R.string.LocalPin));
         addToFolderItem = otherItem.addSubItem(add_to_folder, R.drawable.msg_addfolder, LocaleController.getString(R.string.FilterAddTo));
         removeFromFolderItem = otherItem.addSubItem(remove_from_folder, R.drawable.msg_removefolder, LocaleController.getString(R.string.FilterRemoveFrom));
         readItem = otherItem.addSubItem(read, R.drawable.msg_markread, LocaleController.getString(R.string.MarkAsRead));
@@ -8859,6 +8863,22 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             previewMenu[0].addView(unpinItem);
         }
 
+        if (!isCommunityCell) {
+            boolean locallyPinned = NekoConfig.isLocalPin(dialogId);
+            ActionBarMenuSubItem localPinItem = new ActionBarMenuSubItem(getParentActivity(), false, false);
+            localPinItem.setTextAndIcon(LocaleController.getString(locallyPinned ? R.string.LocalUnpin : R.string.LocalPin), locallyPinned ? R.drawable.msg_unpin : R.drawable.msg_pin);
+            localPinItem.setMinimumWidth(160);
+            localPinItem.setOnClickListener(e -> {
+                finishPreviewFragment();
+                AndroidUtilities.runOnUIThread(() -> {
+                    NekoConfig.toggleLocalPin(dialogId);
+                    getMessagesController().sortDialogs(null);
+                    NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.dialogsNeedReload);
+                });
+            });
+            previewMenu[0].addView(localPinItem);
+        }
+
         if (!DialogObject.isUserDialog(dialogId) || !UserObject.isUserSelf(getMessagesController().getUser(dialogId))) {
             ActionBarMenuSubItem muteItem = new ActionBarMenuSubItem(getParentActivity(), false, false);
             if (!getMessagesController().isDialogMuted(dialogId, 0)) {
@@ -9336,6 +9356,25 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 }
                 return;
             }
+        } else if (action == localpin) {
+            boolean allLocallyPinned = count != 0;
+            for (int a = 0; a < count; a++) {
+                if (!NekoConfig.isLocalPin(selectedDialogs.get(a))) {
+                    allLocallyPinned = false;
+                    break;
+                }
+            }
+            for (int a = 0; a < count; a++) {
+                NekoConfig.setLocalPin(selectedDialogs.get(a), !allLocallyPinned);
+            }
+            getMessagesController().sortDialogs(null);
+            NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.dialogsNeedReload);
+            final UndoView undoView = getUndoView();
+            if (undoView != null) {
+                undoView.showWithAction(0, allLocallyPinned ? UndoView.ACTION_UNPIN_DIALOGS : UndoView.ACTION_PIN_DIALOGS, count, 1600, null, null);
+            }
+            hideActionMode(false);
+            return;
         } else if (action == community_ungroup) {
             if (alert) {
                 AlertsCreator.showSimpleConfirmAlert(this,
@@ -10070,6 +10109,17 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 pinItem.setContentDescription(LocaleController.getString(R.string.UnpinFromTop));
                 pin2Item.setText(LocaleController.getString(R.string.DialogUnpin));
             }
+        }
+        if (localPin2Item != null) {
+            int localPinCount = 0;
+            for (int a = 0; a < count; a++) {
+                if (NekoConfig.isLocalPin(selectedDialogs.get(a))) {
+                    localPinCount++;
+                }
+            }
+            boolean allLocallyPinned = count != 0 && localPinCount == count;
+            localPin2Item.setTextAndIcon(LocaleController.getString(allLocallyPinned ? R.string.LocalUnpin : R.string.LocalPin), allLocallyPinned ? R.drawable.msg_unpin : R.drawable.msg_pin);
+            localPin2Item.setVisibility(communityId != 0 ? View.GONE : View.VISIBLE);
         }
     }
 

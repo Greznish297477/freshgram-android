@@ -21,6 +21,7 @@ import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.BuildConfig;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
+import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.browser.Browser;
 import org.telegram.ui.ActionBar.ActionBar;
@@ -34,6 +35,7 @@ import org.telegram.ui.Components.ItemOptions;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.UItem;
 import org.telegram.ui.Components.UniversalAdapter;
+import org.telegram.ui.LaunchActivity;
 import org.telegram.ui.ProfileActivity.SearchAdapter.SearchResult;
 
 import java.util.ArrayList;
@@ -46,6 +48,7 @@ import tw.nekomimi.nekogram.accessibility.AccessibilitySettingsActivity;
 import tw.nekomimi.nekogram.helpers.CloudSettingsHelper;
 import tw.nekomimi.nekogram.helpers.PasscodeHelper;
 import tw.nekomimi.nekogram.helpers.remote.ConfigHelper;
+import tw.nekomimi.nekogram.helpers.remote.UpdateHelper;
 
 public class NekoSettingsActivity extends BaseNekoSettingsActivity implements FactorAnimator.Target {
 
@@ -68,6 +71,7 @@ public class NekoSettingsActivity extends BaseNekoSettingsActivity implements Fa
     private final int sourceCodeRow = rowId++;
     private final int translationRow = rowId++;
     private final int donateRow = rowId++;
+    private final int updateRow = rowId++;
 
     private final int sponsorRow = 100;
 
@@ -178,6 +182,7 @@ public class NekoSettingsActivity extends BaseNekoSettingsActivity implements Fa
         items.add(UItem.asButton(sourceCodeRow, R.drawable.msg_link, LocaleController.getString(R.string.ViewSourceCode), "GitHub").slug("sourceCode"));
         items.add(UItem.asButtonSubtext(translationRow, R.drawable.msg_translate, LocaleController.getString(R.string.Translation), LocaleController.getString(R.string.TranslationAbout)).slug("translation"));
         items.add(UItem.asButtonSubtext(donateRow, R.drawable.msg_input_like, LocaleController.getString(R.string.Donate), LocaleController.getString(R.string.DonateAbout)).slug("donate"));
+        items.add(UItem.asButtonSubtext(updateRow, R.drawable.msg_download_settings, LocaleController.getString(R.string.CheckUpdate), UpdateHelper.formatDateUpdate(SharedConfig.lastUpdateCheckTime)).slug("checkUpdate"));
         items.add(UItem.asShadow(null));
 
         newsList.clear();
@@ -222,6 +227,18 @@ public class NekoSettingsActivity extends BaseNekoSettingsActivity implements Fa
             Browser.openUrl(getParentActivity(), "https://github.com/Snowy-Fluffy/freshGram");
         } else if (id == sourceCodeRow) {
             Browser.openUrl(getParentActivity(), "https://github.com/Nekogram/Nekogram");
+        } else if (id == updateRow) {
+            if (getParentActivity() instanceof LaunchActivity launchActivity) {
+                launchActivity.checkAppUpdate(true, new Browser.Progress() {
+                    @Override
+                    public void end() {
+                        item.subtext = UpdateHelper.formatDateUpdate(SharedConfig.lastUpdateCheckTime);
+                        listView.adapter.notifyItemChanged(position);
+                    }
+                });
+                item.subtext = LocaleController.getString(R.string.CheckingUpdate);
+                listView.adapter.notifyItemChanged(position);
+            }
         } else if (id >= sponsorRow) {
             var news = newsList.get(id - sponsorRow);
             Browser.openUrl(getParentActivity(), news.url);
@@ -325,6 +342,11 @@ public class NekoSettingsActivity extends BaseNekoSettingsActivity implements Fa
         searchResultList.add(new SearchResult(20002, LocaleController.getString(R.string.ViewSourceCode), "GitHub", R.drawable.msg2_help, () -> Browser.openUrl(getParentActivity(), "https://github.com/Nekogram/Nekogram")));
         searchResultList.add(new SearchResult(20003, LocaleController.getString(R.string.Translation), LocaleController.getString(R.string.TranslationAbout), R.drawable.msg2_help, () -> Browser.openUrl(getParentActivity(), "https://neko.crowdin.com/nekogram")));
         searchResultList.add(new SearchResult(20004, LocaleController.getString(R.string.Donate), LocaleController.getString(R.string.DonateAbout), R.drawable.msg2_help, () -> presentFragment(new NekoDonateActivity())));
+        searchResultList.add(new SearchResult(20005, LocaleController.getString(R.string.CheckUpdate), UpdateHelper.formatDateUpdate(SharedConfig.lastUpdateCheckTime), R.drawable.msg2_help, () -> {
+            if (getParentActivity() instanceof LaunchActivity launchActivity) {
+                launchActivity.checkAppUpdate(true, null);
+            }
+        }));
 
         return searchResultList;
     }

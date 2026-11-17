@@ -102,6 +102,9 @@
     <string name="LastUpdateRecently">Последняя успешная проверка была сейчас.</string>
     <string name="LastUpdateNever">Обновления ни разу не проверялись.</string>
     <string name="CheckingUpdate">Проверка обновлений…</string>
+    <string name="LocalPin">Закрепить локально</string>
+    <string name="LocalUnpin">Открепить локально</string>
+    <string name="LocalPinAbout">Закреплено только на этом устройстве</string>
     <string name="ProviderMicrosoftTranslator">Microsoft Translator</string>
     <string name="TranslationProviderShort">Поставщик</string>
     <string name="ViewSourceCode">Посмотреть исходный код</string>

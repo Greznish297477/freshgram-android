@@ -105,6 +105,9 @@
     <string name="LastUpdateRecently">Last successfully checked just now.</string>
     <string name="LastUpdateNever">Never checked since install.</string>
     <string name="CheckingUpdate">Checking for update…</string>
+    <string name="LocalPin">Pin locally</string>
+    <string name="LocalUnpin">Unpin locally</string>
+    <string name="LocalPinAbout">Pinned on this device only</string>
     <string name="ProviderMicrosoftTranslator">Microsoft Translator</string>
     <string name="TranslationProviderShort">Provider</string>
     <string name="ViewSourceCode">View source code</string>

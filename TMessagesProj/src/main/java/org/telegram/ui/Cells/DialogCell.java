@@ -3335,9 +3335,9 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                         lastMessageDate = dialog.last_message_date;
                         if (dialogsType == 7 || dialogsType == 8) {
                             MessagesController.DialogFilter filter = MessagesController.getInstance(currentAccount).selectedDialogFilter[dialogsType == 8 ? 1 : 0];
-                            drawPin = filter != null && filter.pinnedDialogs.indexOfKey(dialog.id) >= 0;
+                            drawPin = filter != null && filter.pinnedDialogs.indexOfKey(dialog.id) >= 0 || NekoConfig.isLocalPin(dialog.id);
                         } else {
-                            drawPin = currentDialogFolderId == 0 && dialog.pinned;
+                            drawPin = currentDialogFolderId == 0 && (dialog.pinned || NekoConfig.isLocalPin(dialog.id));
                         }
                         if (message != null) {
                             lastSendState = message.messageOwner.send_state;

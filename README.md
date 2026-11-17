@@ -80,14 +80,32 @@ Store or a new APK download by hand:
 - When a newer release is available it shows a dialog with the release notes;
   **Download Now** fetches the APK inside the app and hands it to the system
   installer (`REQUEST_INSTALL_PACKAGES` is already declared).
-- You can trigger a manual check from **freshGram Settings → Experimental →
-  Check for update**; the automatic check runs at most once a day.
+- You can trigger a manual check from **freshGram Settings → Check for update**
+  (and also from **Settings → Experimental → Check for update**); the automatic
+  check runs at most once a day.
 
 > If you rename the repository or move the project to another owner, update
 > `REPO_OWNER` / `REPO_NAME` in
 > `TMessagesProj/src/main/java/tw/nekomimi/nekogram/helpers/FreshgramUpdater.java`.
 > Updates only work for releases that contain the `freshGram-*-<variant>-<abi>.apk`
 > assets, which the release workflow produces automatically.
+
+## Local pins (more than 5 pinned chats)
+
+Telegram limits pinned chats on the server (5 per folder for free accounts). freshGram
+adds *local pins* — pins that exist only on this device and are never sent to Telegram:
+
+- Long-press a chat → **⋮ → Pin locally** (or select several chats → **⋮ → Pin locally**).
+- A locally pinned chat gets the same pin badge and sits in the pinned block, right
+  after the real server pins. There is no limit on how many you can add.
+- The list is stored in `nekoconfig` preferences (`localPins`), ordered by when you
+  added the pin. It is not synced, not visible on other devices and not shown in
+  other Telegram clients.
+- Unpin the same way: **⋮ → Unpin locally**.
+
+This does not spoof Telegram Premium and does not change server state, so it cannot
+get an account limited or banned. Real pin limits still apply to normal pins (the
+ones synced across devices).
 
 ## Building
 

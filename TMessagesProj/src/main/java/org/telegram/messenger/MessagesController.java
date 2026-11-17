@@ -1405,9 +1405,25 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     private DialogFilter sortingDialogFilter;
+    /**
+     * Synthetic pinned order used for client-side local pins so they sort right below real pinned chats.
+     */
+    private static final int LOCAL_PIN_ORDER_BASE = -100000;
     private final Comparator<TLRPC.Dialog> dialogDateComparator = (dialog1, dialog2) -> {
         int pinnedNum1 = sortingDialogFilter == null ? Integer.MIN_VALUE : sortingDialogFilter.pinnedDialogs.get(dialog1.id, Integer.MIN_VALUE);
         int pinnedNum2 = sortingDialogFilter == null ? Integer.MIN_VALUE : sortingDialogFilter.pinnedDialogs.get(dialog2.id, Integer.MIN_VALUE);
+        if (pinnedNum1 == Integer.MIN_VALUE) {
+            int localIndex = NekoConfig.getLocalPinIndex(dialog1.id);
+            if (localIndex >= 0) {
+                pinnedNum1 = LOCAL_PIN_ORDER_BASE - localIndex;
+            }
+        }
+        if (pinnedNum2 == Integer.MIN_VALUE) {
+            int localIndex = NekoConfig.getLocalPinIndex(dialog2.id);
+            if (localIndex >= 0) {
+                pinnedNum2 = LOCAL_PIN_ORDER_BASE - localIndex;
+            }
+        }
         if (dialog1 instanceof TLRPC.TL_dialogFolder && !(dialog2 instanceof TLRPC.TL_dialogFolder)) {
             return -1;
         } else if (!(dialog1 instanceof TLRPC.TL_dialogFolder) && dialog2 instanceof TLRPC.TL_dialogFolder) {
@@ -1444,18 +1460,22 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     private Comparator<TLRPC.Dialog> dialogComparator = (dialog1, dialog2) -> {
+        boolean pinned1 = dialog1.pinned || NekoConfig.isLocalPin(dialog1.id);
+        boolean pinned2 = dialog2.pinned || NekoConfig.isLocalPin(dialog2.id);
         if (dialog1 instanceof TLRPC.TL_dialogFolder && !(dialog2 instanceof TLRPC.TL_dialogFolder)) {
             return -1;
         } else if (!(dialog1 instanceof TLRPC.TL_dialogFolder) && dialog2 instanceof TLRPC.TL_dialogFolder) {
             return 1;
-        } else if (!dialog1.pinned && dialog2.pinned) {
+        } else if (!pinned1 && pinned2) {
             return 1;
-        } else if (dialog1.pinned && !dialog2.pinned) {
+        } else if (pinned1 && !pinned2) {
             return -1;
-        } else if (dialog1.pinned) {
-            if (dialog1.pinnedNum < dialog2.pinnedNum) {
+        } else if (pinned1) {
+            int pinnedNum1 = dialog1.pinned ? dialog1.pinnedNum : (LOCAL_PIN_ORDER_BASE - NekoConfig.getLocalPinIndex(dialog1.id));
+            int pinnedNum2 = dialog2.pinned ? dialog2.pinnedNum : (LOCAL_PIN_ORDER_BASE - NekoConfig.getLocalPinIndex(dialog2.id));
+            if (pinnedNum1 < pinnedNum2) {
                 return 1;
-            } else if (dialog1.pinnedNum > dialog2.pinnedNum) {
+            } else if (pinnedNum1 > pinnedNum2) {
                 return -1;
             } else {
                 return 0;

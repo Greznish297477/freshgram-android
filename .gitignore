@@ -27,3 +27,6 @@ sentry.properties
 # артефакты сборки/релизов — выкладываются в GitHub Releases, не в git
 dist/
 !dist/README.md
+
+# JVM heap dumps
+*.hprof

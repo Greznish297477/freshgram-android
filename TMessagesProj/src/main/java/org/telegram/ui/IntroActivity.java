@@ -111,6 +111,7 @@ public class IntroActivity extends BaseFragment implements NotificationCenter.No
     private TextView startMessagingButton;
     private FrameLayout frameLayout2;
     private FrameLayout frameContainerView;
+    private LinearLayout introLanguageSwitcher;
 
     private RLottieDrawable darkThemeDrawable;
 
@@ -203,6 +204,16 @@ public class IntroActivity extends BaseFragment implements NotificationCenter.No
                 if (marginLayoutParams.topMargin != newTopMargin) {
                     marginLayoutParams.topMargin = newTopMargin;
                     themeFrameLayout.requestLayout();
+                }
+                // Keep the language switcher aligned with the theme button even when
+                // AndroidUtilities.statusBarHeight is only known after the first layout.
+                if (introLanguageSwitcher != null) {
+                    MarginLayoutParams switcherLayoutParams = (MarginLayoutParams) introLanguageSwitcher.getLayoutParams();
+                    int switcherTopMargin = newTopMargin + dp(16);
+                    if (switcherLayoutParams.topMargin != switcherTopMargin) {
+                        switcherLayoutParams.topMargin = switcherTopMargin;
+                        introLanguageSwitcher.requestLayout();
+                    }
                 }
             }
         };
@@ -434,6 +445,7 @@ public class IntroActivity extends BaseFragment implements NotificationCenter.No
         // Выравниваем по вертикальному центру кнопки смены темы (64dp), которая справа.
         int languageSwitcherTopMargin = dp(themeMargin) + dp(16) + (AndroidUtilities.isTablet() ? 0 : AndroidUtilities.statusBarHeight);
         frameContainerView.addView(languageSwitcher, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, 32, Gravity.TOP | Gravity.LEFT, themeMargin, languageSwitcherTopMargin, 0, 0));
+        introLanguageSwitcher = languageSwitcher;
 
         switchLanguageEnglish = createIntroLanguageView(context, "English", "en");
         languageSwitcher.addView(switchLanguageEnglish, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT));

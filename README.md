@@ -23,8 +23,8 @@ adding select features from the AyuGram and Materialgram ecosystems.
 | Feature reference | AyuGram, Materialgram | GPL-2.0 |
 
 - Package: `app.freshgram.android`
-- Version: `13.1.2` (code `7238`)
-- Upstream version reported to Telegram: `13.1.2`
+- Version: `13.1.3` (code `7239`)
+- Upstream version reported to Telegram: `13.1.3`
 
 Because it is built on Telegram for Android (which carries the Telegram
 additional terms on top of GPL-2.0), freshGram Android is distributed under the
@@ -65,7 +65,7 @@ freshGram-<version>-<code>-lite-armeabi-v7a.apk
 Install with:
 
 ```bash
-adb install -r freshGram-13.1.2-7238-full-universal.apk
+adb install -r freshGram-13.1.3-7239-full-universal.apk
 ```
 
 ## Automatic updates from GitHub

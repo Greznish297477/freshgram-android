@@ -17471,6 +17471,17 @@ public class MessagesController extends BaseController implements NotificationCe
                     if (newTaskId != 0) {
                         getMessagesStorage().removePendingTask(newTaskId);
                     }
+                    if (pin && error != null && error.text != null && error.text.contains("PINNED_DIALOGS_TOO_MUCH")) {
+                        // Server-side limit reached: keep this pin locally instead of reverting it.
+                        AndroidUtilities.runOnUIThread(() -> {
+                            dialog.pinned = false;
+                            dialog.pinnedNum = 0;
+                            getMessagesStorage().setDialogPinned(dialogId, 0);
+                            NekoConfig.setLocalPin(dialogId, true);
+                            sortDialogs(null);
+                            getNotificationCenter().postNotificationName(NotificationCenter.dialogsNeedReload);
+                        });
+                    }
                 });
             }
         }

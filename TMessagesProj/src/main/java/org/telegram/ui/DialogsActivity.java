@@ -8802,9 +8802,12 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             hasPinAction[0] = !(newPinnedSecretCount + pinnedSecretCount > maxPinnedCount || newPinnedCount + pinnedCount - alreadyAdded > maxPinnedCount);
         }
 
-        if (hasPinAction[0]) {
+        {
+            final boolean[] serverPinned = new boolean[]{isDialogPinned(dialog)};
+            final boolean[] locallyPinned = new boolean[]{NekoConfig.isLocalPin(dialogId)};
+            final boolean pinned = serverPinned[0] || locallyPinned[0];
             ActionBarMenuSubItem unpinItem = new ActionBarMenuSubItem(getParentActivity(), false, false);
-            if (isDialogPinned(dialog)) {
+            if (pinned) {
                 unpinItem.setTextAndIcon(LocaleController.getString(R.string.UnpinMessage), R.drawable.msg_unpin);
             } else {
                 unpinItem.setTextAndIcon(LocaleController.getString(R.string.PinMessage), R.drawable.msg_pin);
@@ -8813,51 +8816,95 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             unpinItem.setOnClickListener(e -> {
                 finishPreviewFragment();
                 AndroidUtilities.runOnUIThread(() -> {
-                    int minPinnedNum = Integer.MAX_VALUE;
-                    if (filter != null && isDialogPinned(dialog)) {
-                        for (int c = 0, N = filter.pinnedDialogs.size(); c < N; c++) {
-                            minPinnedNum = Math.min(minPinnedNum, filter.pinnedDialogs.valueAt(c));
-                        }
-                        minPinnedNum -= canPinCount;
-                    }
-                    TLRPC.EncryptedChat encryptedChat = null;
-                    if (DialogObject.isEncryptedDialog(dialogId)) {
-                        encryptedChat = getMessagesController().getEncryptedChat(DialogObject.getEncryptedChatId(dialogId));
-                    }
-                    UndoView undoView = getUndoView();
-                    if (undoView == null) {
-                        return;
-                    }
-                    if (!isDialogPinned(dialog)) {
-                        pinDialog(dialogId, true, filter, minPinnedNum, true);
-                        undoView.showWithAction(0, UndoView.ACTION_PIN_DIALOGS, 1, 1600, null, null);
-                        if (filter != null) {
-                            if (encryptedChat != null) {
-                                if (!filter.alwaysShow.contains(encryptedChat.user_id)) {
-                                    filter.alwaysShow.add(encryptedChat.user_id);
+                    final boolean wasServerPinned = isDialogPinned(dialog);
+                    final boolean wasLocalPinned = NekoConfig.isLocalPin(dialogId);
+                    final UndoView undoView = getUndoView();
+                    if (!wasServerPinned && !wasLocalPinned) {
+                        // not pinned yet
+                        if (hasPinAction[0]) {
+                            int minPinnedNum = Integer.MAX_VALUE;
+                            if (filter != null) {
+                                for (int c = 0, N = filter.pinnedDialogs.size(); c < N; c++) {
+                                    minPinnedNum = Math.min(minPinnedNum, filter.pinnedDialogs.valueAt(c));
                                 }
-                            } else {
-                                if (!filter.alwaysShow.contains(dialogId)) {
-                                    filter.alwaysShow.add(dialogId);
+                                minPinnedNum -= canPinCount;
+                            }
+                            TLRPC.EncryptedChat encryptedChat = null;
+                            if (DialogObject.isEncryptedDialog(dialogId)) {
+                                encryptedChat = getMessagesController().getEncryptedChat(DialogObject.getEncryptedChatId(dialogId));
+                            }
+                            if (undoView != null) {
+                                undoView.showWithAction(0, UndoView.ACTION_PIN_DIALOGS, 1, 1600, null, null);
+                            }
+                            pinDialog(dialogId, true, filter, minPinnedNum, true);
+                            if (filter != null) {
+                                if (encryptedChat != null) {
+                                    if (!filter.alwaysShow.contains(encryptedChat.user_id)) {
+                                        filter.alwaysShow.add(encryptedChat.user_id);
+                                    }
+                                } else {
+                                    if (!filter.alwaysShow.contains(dialogId)) {
+                                        filter.alwaysShow.add(dialogId);
+                                    }
                                 }
+                            }
+                            if (filter != null) {
+                                FilterCreateActivity.saveFilterToServer(filter, filter.flags, filter.emoticon, filter.name, filter.entities, filter.title_noanimate, filter.color, filter.alwaysShow, filter.neverShow, filter.pinnedDialogs, false, false, true, true, false, DialogsActivity.this, null);
+                            }
+                            getMessagesController().reorderPinnedDialogs(folderId, null, 0);
+                            updateCounters(true);
+                            if (viewPages != null) {
+                                for (int a = 0; a < viewPages.length; a++) {
+                                    viewPages[a].dialogsAdapter.onReorderStateChanged(false);
+                                }
+                            }
+                            updateVisibleRows(MessagesController.UPDATE_MASK_REORDER | MessagesController.UPDATE_MASK_CHECK);
+                        } else {
+                            // Telegram limits server pins (5). Keep the extra pin on this device only.
+                            NekoConfig.setLocalPin(dialogId, true);
+                            getMessagesController().sortDialogs(null);
+                            NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.dialogsNeedReload);
+                            updateCounters(true);
+                            if (undoView != null) {
+                                undoView.showWithAction(0, UndoView.ACTION_PIN_DIALOGS, 1, 1600, null, null);
                             }
                         }
                     } else {
-                        pinDialog(dialogId, false, filter, minPinnedNum, true);
-                        undoView.showWithAction(0, UndoView.ACTION_UNPIN_DIALOGS, 1, 1600, null, null);
-                    }
-                    if (filter != null) {
-                        FilterCreateActivity.saveFilterToServer(filter, filter.flags, filter.emoticon, filter.name, filter.entities, filter.title_noanimate, filter.color, filter.alwaysShow, filter.neverShow, filter.pinnedDialogs, false, false, true, true, false, DialogsActivity.this, null);
-                    }
-                    getMessagesController().reorderPinnedDialogs(folderId, null, 0);
-                    updateCounters(true);
-                    if (viewPages != null) {
-                        for (int a = 0; a < viewPages.length; a++) {
-                            viewPages[a].dialogsAdapter.onReorderStateChanged(false);
+                        // already pinned: unpin (server and/or local)
+                        if (wasServerPinned) {
+                            int minPinnedNum = Integer.MAX_VALUE;
+                            if (filter != null) {
+                                for (int c = 0, N = filter.pinnedDialogs.size(); c < N; c++) {
+                                    minPinnedNum = Math.min(minPinnedNum, filter.pinnedDialogs.valueAt(c));
+                                }
+                                minPinnedNum -= canPinCount;
+                            }
+                            if (undoView != null) {
+                                undoView.showWithAction(0, UndoView.ACTION_UNPIN_DIALOGS, 1, 1600, null, null);
+                            }
+                            pinDialog(dialogId, false, filter, minPinnedNum, true);
+                            if (filter != null) {
+                                FilterCreateActivity.saveFilterToServer(filter, filter.flags, filter.emoticon, filter.name, filter.entities, filter.title_noanimate, filter.color, filter.alwaysShow, filter.neverShow, filter.pinnedDialogs, false, false, true, true, false, DialogsActivity.this, null);
+                            }
+                            getMessagesController().reorderPinnedDialogs(folderId, null, 0);
+                            updateCounters(true);
+                            if (viewPages != null) {
+                                for (int a = 0; a < viewPages.length; a++) {
+                                    viewPages[a].dialogsAdapter.onReorderStateChanged(false);
+                                }
+                            }
+                            updateVisibleRows(MessagesController.UPDATE_MASK_REORDER | MessagesController.UPDATE_MASK_CHECK);
+                        }
+                        if (wasLocalPinned) {
+                            NekoConfig.setLocalPin(dialogId, false);
+                            getMessagesController().sortDialogs(null);
+                            NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.dialogsNeedReload);
+                            updateCounters(true);
+                            if (!wasServerPinned && undoView != null) {
+                                undoView.showWithAction(0, UndoView.ACTION_UNPIN_DIALOGS, 1, 1600, null, null);
+                            }
                         }
                     }
-                    updateVisibleRows(MessagesController.UPDATE_MASK_REORDER | MessagesController.UPDATE_MASK_CHECK);
-
                 }, 100);
             });
             previewMenu[0].addView(unpinItem);
@@ -9351,8 +9398,18 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 if (folderId != 0 || filter != null) {
                     AlertsCreator.showSimpleAlert(DialogsActivity.this, LocaleController.formatString("PinFolderLimitReached", R.string.PinFolderLimitReached, LocaleController.formatPluralString("Chats", maxPinnedCount)));
                 } else {
-                    LimitReachedBottomSheet limitReachedBottomSheet = new LimitReachedBottomSheet(this, getParentActivity(), LimitReachedBottomSheet.TYPE_PIN_DIALOGS, currentAccount, null);
-                    showDialog(limitReachedBottomSheet);
+                    // Telegram limits server pins (5). Keep the extra pins on this device only
+                    // instead of blocking the user with the "limit reached" sheet.
+                    for (int a = 0; a < count; a++) {
+                        NekoConfig.setLocalPin(selectedDialogs.get(a), true);
+                    }
+                    getMessagesController().sortDialogs(null);
+                    NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.dialogsNeedReload);
+                    final UndoView undoView = getUndoView();
+                    if (undoView != null) {
+                        undoView.showWithAction(0, UndoView.ACTION_PIN_DIALOGS, count, 1600, null, null);
+                    }
+                    hideActionMode(false);
                 }
                 return;
             }
@@ -9506,7 +9563,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             boolean isBot = user != null && user.bot && !MessagesController.isSupportUser(user);
             if (action == pin || action == pin2) {
                 if (canPinCount != 0) {
-                    if (isDialogPinned(dialog)) {
+                    if (isDialogPinned(dialog) || NekoConfig.isLocalPin(selectedDialog)) {
                         continue;
                     }
                     pinnedActionCount++;
@@ -9524,11 +9581,18 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                         }
                     }
                 } else {
-                    if (!isDialogPinned(dialog)) {
+                    boolean serverPinned = isDialogPinned(dialog);
+                    boolean localPinned = NekoConfig.isLocalPin(selectedDialog);
+                    if (!serverPinned && !localPinned) {
                         continue;
                     }
                     pinnedActionCount++;
-                    pinDialog(selectedDialog, false, filter, minPinnedNum, count == 1);
+                    if (localPinned) {
+                        NekoConfig.setLocalPin(selectedDialog, false);
+                    }
+                    if (serverPinned) {
+                        pinDialog(selectedDialog, false, filter, minPinnedNum, count == 1);
+                    }
                 }
             } else if (action == read) {
                 if (canReadCount != 0) {
@@ -9643,6 +9707,9 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             } else {
                 getMessagesController().reorderPinnedDialogs(folderId, null, 0);
             }
+            // Re-sort so client-side (local) pins are placed correctly too.
+            getMessagesController().sortDialogs(null);
+            NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.dialogsNeedReload);
             UndoView undoView = getUndoView();
             if (searchIsShowed && undoView != null) {
                 undoView.showWithAction(0, canPinCount != 0 ? UndoView.ACTION_PIN_DIALOGS : UndoView.ACTION_UNPIN_DIALOGS, pinnedActionCount);
@@ -9896,7 +9963,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             }
 
             long selectedDialog = dialog.id;
-            boolean pinned = isDialogPinned(dialog);
+            boolean pinned = isDialogPinned(dialog) || NekoConfig.isLocalPin(selectedDialog);
             boolean hasUnread = dialog.unread_count != 0 || dialog.unread_mark;
 
             if (getMessagesController().isForum(selectedDialog)) {

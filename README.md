@@ -23,8 +23,8 @@ adding select features from the AyuGram and Materialgram ecosystems.
 | Feature reference | AyuGram, Materialgram | GPL-2.0 |
 
 - Package: `app.freshgram.android`
-- Version: `13.1.3` (code `7239`)
-- Upstream version reported to Telegram: `13.1.3`
+- Version: `13.1.4` (code `7240`)
+- Upstream version reported to Telegram: `13.1.4`
 
 Because it is built on Telegram for Android (which carries the Telegram
 additional terms on top of GPL-2.0), freshGram Android is distributed under the
@@ -65,7 +65,7 @@ freshGram-<version>-<code>-lite-armeabi-v7a.apk
 Install with:
 
 ```bash
-adb install -r freshGram-13.1.3-7239-full-universal.apk
+adb install -r freshGram-13.1.4-7240-full-universal.apk
 ```
 
 ## Automatic updates from GitHub
@@ -95,7 +95,11 @@ Store or a new APK download by hand:
 Telegram limits pinned chats on the server (5 per folder for free accounts). freshGram
 adds *local pins* — pins that exist only on this device and are never sent to Telegram:
 
-- Long-press a chat → **⋮ → Pin locally** (or select several chats → **⋮ → Pin locally**).
+- Just tap **Pin** as usual. When Telegram's server limit is reached, freshGram
+  keeps the extra pin on this device instead of showing a "limit reached" error —
+  visually it is indistinguishable from a normal pin and the menu shows **Unpin**.
+- You can also use the explicit **⋮ → Pin locally** item (or select several chats
+  → **⋮ → Pin locally**) to pin locally right away.
 - A locally pinned chat gets the same pin badge and sits in the pinned block, right
   after the real server pins. There is no limit on how many you can add.
 - The list is stored in `nekoconfig` preferences (`localPins`), ordered by when you

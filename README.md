@@ -134,6 +134,22 @@ Or the plain Gradle task:
 ./gradlew :TMessagesProj_App:assembleRelease
 ```
 
+On Windows use the helper, which finds JDK 25 and the Android SDK by itself:
+
+```powershell
+.\Tools\build-local.ps1                              # full release
+.\Tools\build-local.ps1 -Lite                        # lite release
+.\Tools\build-local.ps1 -Task compileDebugJavaWithJavac   # quick Java-only check
+```
+
+> **Windows requirements for local builds**
+> - The project path must contain **only ASCII characters** — AGP refuses
+>   non-ASCII paths (`Your project path contains non-ASCII characters`).
+> - `git config --global core.longpaths true` and
+>   `LongPathsEnabled=1` are required for the `TMessagesProj_Modules/media` submodule.
+> - JDK 25 + NDK 27.3.13750724 + CMake 3.22.1 must be inside the SDK
+>   (`Sdk\ndk\27.3.13750724`, `Sdk\cmake\3.22.1`).
+
 ### CI builds
 
 The workflow [`.github/workflows/release-full-lite.yml`](.github/workflows/release-full-lite.yml)

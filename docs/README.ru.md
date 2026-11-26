@@ -24,8 +24,8 @@ freshGram Desktop — форк Telegram Desktop, добавляющий прив
 | Референс функций | AyuGram, Materialgram | GPL-2.0 |
 
 - Пакет: `app.freshgram.android`
-- Версия: `13.1.4` (код `7240`)
-- Версия вышестоящего клиента, которую видит Telegram: `13.1.4`
+- Версия: `13.1.5` (код `7241`)
+- Версия вышестоящего клиента, которую видит Telegram: `13.1.5`
 
 Так как в основе лежит Telegram для Android (с его дополнительными условиями
 поверх GPL-2.0), freshGram Android распространяется на тех же условиях.
@@ -66,7 +66,7 @@ freshGram-<версия>-<код>-lite-armeabi-v7a.apk
 Установка:
 
 ```bash
-adb install -r freshGram-13.1.4-7240-full-universal.apk
+adb install -r freshGram-13.1.5-7241-full-universal.apk
 ```
 
 ## Автообновление с GitHub

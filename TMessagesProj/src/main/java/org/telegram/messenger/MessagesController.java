@@ -1433,6 +1433,18 @@ public class MessagesController extends BaseController implements NotificationCe
         } else if (pinnedNum1 != Integer.MIN_VALUE && pinnedNum2 == Integer.MIN_VALUE) {
             return -1;
         } else if (pinnedNum1 != Integer.MIN_VALUE) {
+            // The remembered (drag & drop) order of the pinned block wins for both real and
+            // client-side pins; chats pinned just now fall back to the server/local order.
+            final int order1 = NekoConfig.getPinOrderIndex(dialog1.id);
+            final int order2 = NekoConfig.getPinOrderIndex(dialog2.id);
+            if (order1 >= 0 && order2 >= 0) {
+                if (order1 < order2) {
+                    return -1;
+                } else if (order1 > order2) {
+                    return 1;
+                }
+                return 0;
+            }
             if (pinnedNum1 > pinnedNum2) {
                 return 1;
             } else if (pinnedNum1 < pinnedNum2) {
@@ -1471,6 +1483,19 @@ public class MessagesController extends BaseController implements NotificationCe
         } else if (pinned1 && !pinned2) {
             return -1;
         } else if (pinned1) {
+            // The user-defined pinned order (works for both real and client-side pins).
+            final int order1 = NekoConfig.getPinOrderIndex(dialog1.id);
+            final int order2 = NekoConfig.getPinOrderIndex(dialog2.id);
+            if (order1 >= 0 && order2 >= 0) {
+                if (order1 < order2) {
+                    return -1;
+                } else if (order1 > order2) {
+                    return 1;
+                }
+                return 0;
+            }
+            // A chat that was pinned just now has no remembered position yet, so it falls back to
+            // the normal (server / local) order and shows up at the top like a regular new pin.
             int pinnedNum1 = dialog1.pinned ? dialog1.pinnedNum : (LOCAL_PIN_ORDER_BASE - NekoConfig.getLocalPinIndex(dialog1.id));
             int pinnedNum2 = dialog2.pinned ? dialog2.pinnedNum : (LOCAL_PIN_ORDER_BASE - NekoConfig.getLocalPinIndex(dialog2.id));
             if (pinnedNum1 < pinnedNum2) {
@@ -17430,6 +17455,7 @@ public class MessagesController extends BaseController implements NotificationCe
             dialog.pinnedNum = maxPinnedNum + 1;
         } else {
             dialog.pinnedNum = 0;
+            NekoConfig.removeFromPinOrder(dialogId);
         }
         sortDialogs(null);
         if (!pin && !dialogs.isEmpty() && dialogs.get(dialogs.size() - 1) == dialog && !dialogsEndReached.get(folderId)) {
@@ -22615,12 +22641,42 @@ public class MessagesController extends BaseController implements NotificationCe
                         }
                     }
                 }
+                // Keep the remembered pinned order in sync for folder tabs as well, so pins can
+                // be dragged there too (filter pins are not stored in dialog.pinned).
+                try {
+                    ArrayList<Long> pinnedIds = new ArrayList<>();
+                    for (int a = 0, N = dialogs.size(); a < N; a++) {
+                        TLRPC.Dialog d = dialogs.get(a);
+                        if (sortingDialogFilter.pinnedDialogs.indexOfKey(d.id) >= 0 || NekoConfig.isLocalPin(d.id)) {
+                            pinnedIds.add(d.id);
+                        } else {
+                            break;
+                        }
+                    }
+                    NekoConfig.syncPinOrder(pinnedIds);
+                } catch (Exception ignore) {}
             }
         }
 
         try {
             Collections.sort(allDialogs, dialogComparator);
         } catch (Exception e) {}
+        // Keep the remembered order of the pinned block in sync with the actual pinned set.
+        try {
+            ArrayList<Long> pinnedIds = new ArrayList<>();
+            for (int a = 0, N = allDialogs.size(); a < N; a++) {
+                TLRPC.Dialog d = allDialogs.get(a);
+                if (d instanceof TLRPC.TL_dialogFolder) {
+                    continue;
+                }
+                if (d.pinned || NekoConfig.isLocalPin(d.id)) {
+                    pinnedIds.add(d.id);
+                } else {
+                    break;
+                }
+            }
+            NekoConfig.syncPinOrder(pinnedIds);
+        } catch (Exception ignore) {}
         isLeftPromoChannel = true;
         if (promoDialog != null && promoDialog.id < 0) {
             TLRPC.Chat chat = getChat(-promoDialog.id);

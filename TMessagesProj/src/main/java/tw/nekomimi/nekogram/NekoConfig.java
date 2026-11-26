@@ -116,6 +116,11 @@ public class NekoConfig {
      * are shown mixed into the pinned block of the chat list, looking exactly like real pins.
      */
     public static final ArrayList<Long> localPins = new ArrayList<>();
+    /**
+     * Display order of the whole pinned block (real pins + local pins). Lets the user drag any
+     * pinned chat, including client-side ones that have no server pinnedNum.
+     */
+    public static final ArrayList<Long> pinOrder = new ArrayList<>();
     public static boolean keepEditHistory = true;
     public static boolean hideSponsoredMessages = false;
     public static boolean keepDeleteHistory = true;
@@ -241,6 +246,8 @@ public class NekoConfig {
             allowTabsReorder = preferences.getBoolean("allowTabsReorder", true);
             localPins.clear();
             localPins.addAll(parseLocalPins(preferences.getString("localPins", "")));
+            pinOrder.clear();
+            pinOrder.addAll(parseLocalPins(preferences.getString("pinOrder", "")));
             keepEditHistory = preferences.getBoolean("keepEditHistory", true);
             hideSponsoredMessages = preferences.getBoolean("hideSponsoredMessages", false);
             keepDeleteHistory = preferences.getBoolean("keepDeleteHistory", true);
@@ -1208,8 +1215,13 @@ public class NekoConfig {
             if (!localPins.contains(dialogId)) {
                 localPins.add(dialogId);
             }
+            if (!pinOrder.contains(dialogId)) {
+                pinOrder.add(dialogId);
+                savePinOrder();
+            }
         } else {
             localPins.remove(dialogId);
+            removeFromPinOrder(dialogId);
         }
         saveLocalPins();
     }
@@ -1235,6 +1247,69 @@ public class NekoConfig {
 
     public static boolean areBothLocalPins(long firstId, long secondId) {
         return localPins.contains(firstId) && localPins.contains(secondId);
+    }
+
+    public static int getPinOrderIndex(long dialogId) {
+        return pinOrder.indexOf(dialogId);
+    }
+
+    /**
+     * Remembers the pinned block order. Existing entries keep their relative order and a chat
+     * pinned just now is inserted where it is currently displayed, so a user-defined order
+     * survives normal re-sorting and new pins still appear at the top.
+     */
+    public static void syncPinOrder(ArrayList<Long> pinnedIds) {
+        boolean changed = false;
+        for (int i = 0; i < pinnedIds.size(); i++) {
+            Long id = pinnedIds.get(i);
+            if (pinOrder.contains(id)) {
+                continue;
+            }
+            int insertAt = pinOrder.size();
+            for (int j = i + 1; j < pinnedIds.size(); j++) {
+                int idx = pinOrder.indexOf(pinnedIds.get(j));
+                if (idx >= 0) {
+                    insertAt = idx;
+                    break;
+                }
+            }
+            pinOrder.add(insertAt, id);
+            changed = true;
+        }
+        if (changed) {
+            savePinOrder();
+        }
+    }
+
+    public static void removeFromPinOrder(long dialogId) {
+        if (pinOrder.remove(dialogId)) {
+            savePinOrder();
+        }
+    }
+
+    /**
+     * Moves [firstId] to the position of [secondId] and vice versa (drag & drop in the pinned block).
+     */
+    public static void swapPinOrder(long firstId, long secondId) {
+        int first = pinOrder.indexOf(firstId);
+        int second = pinOrder.indexOf(secondId);
+        if (first < 0 || second < 0 || first == second) {
+            return;
+        }
+        pinOrder.set(first, secondId);
+        pinOrder.set(second, firstId);
+        savePinOrder();
+    }
+
+    private static void savePinOrder() {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < pinOrder.size(); i++) {
+            if (i > 0) {
+                sb.append(',');
+            }
+            sb.append(pinOrder.get(i));
+        }
+        preferences.edit().putString("pinOrder", sb.toString()).apply();
     }
 
     /**

@@ -53,16 +53,52 @@ public class SplashOverlay extends FrameLayout {
     }
 
     public void start() {
-        iconView.setScaleX(0.7f);
-        iconView.setScaleY(0.7f);
+        // freshGram: every launcher icon gets its own entrance motion. The default plane icon
+        // flies in from the left; the other styles drop, unfold, fly in from the right or rise.
+        LauncherIconController.LauncherIcon selected = LauncherIconController.getSelectedIcon();
+        final int motion;
+        if (selected == null || selected == LauncherIconController.LauncherIcon.DEFAULT) {
+            motion = 0;
+        } else {
+            motion = 1 + Math.floorMod(selected.ordinal(), 4);
+        }
+        final float shift = AndroidUtilities.dp(140);
+
         iconView.setAlpha(0f);
-        iconView.setRotation(-12f);
-
-        iconView.animate().scaleX(1f).scaleY(1f).alpha(1f).rotation(0f)
+        iconView.setScaleX(0.8f);
+        iconView.setScaleY(0.8f);
+        switch (motion) {
+            case 0: // самолётик прилетает слева
+                iconView.setTranslationX(-shift);
+                iconView.setRotation(-28f);
+                break;
+            case 1: // иконка падает сверху
+                iconView.setTranslationY(-shift);
+                break;
+            case 2: // раскрывается из центра
+                iconView.setScaleX(0.35f);
+                iconView.setScaleY(0.35f);
+                break;
+            case 3: // прилетает справа
+                iconView.setTranslationX(shift);
+                iconView.setRotation(28f);
+                break;
+            default: // поднимается снизу
+                iconView.setTranslationY(shift);
+                break;
+        }
+        iconView.animate()
+                .alpha(1f)
+                .translationX(0f)
+                .translationY(0f)
+                .rotation(0f)
+                .scaleX(1f)
+                .scaleY(1f)
                 .setInterpolator(new DecelerateInterpolator(2f))
-                .setDuration(420).start();
+                .setDuration(480)
+                .start();
 
-        titleView.animate().alpha(1f).setStartDelay(160).setDuration(320).start();
+        titleView.animate().alpha(1f).setStartDelay(220).setDuration(320).start();
 
         postDelayed(() -> {
             if (finished) {
@@ -70,7 +106,7 @@ public class SplashOverlay extends FrameLayout {
             }
             animate().alpha(0f).setStartDelay(150).setDuration(300)
                     .withEndAction(this::removeSelf).start();
-        }, 900);
+        }, 1100);
     }
 
     private void removeSelf() {

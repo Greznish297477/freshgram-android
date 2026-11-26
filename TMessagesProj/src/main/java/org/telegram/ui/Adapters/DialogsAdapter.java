@@ -1210,29 +1210,50 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
         return itemInternals.get(i).viewType;
     }
 
+    /**
+     * Server-side (or filter-side) pin state, as opposed to a client-side local pin.
+     */
+    private boolean isServerPinned(TLRPC.Dialog dialog) {
+        if (dialog == null) {
+            return false;
+        }
+        if (dialogsType == 7 || dialogsType == 8) {
+            MessagesController.DialogFilter filter = MessagesController.getInstance(currentAccount).selectedDialogFilter[dialogsType == 8 ? 1 : 0];
+            return filter != null && filter.pinnedDialogs.indexOfKey(dialog.id) >= 0;
+        }
+        return dialog.pinned;
+    }
+
     public void moveDialogs(RecyclerListView recyclerView, int fromPosition, int toPosition) {
         ArrayList<TLRPC.Dialog> dialogs = parentFragment.getDialogsArray(currentAccount, dialogsType, folderId, false);
         int fromIndex = fixPosition(fromPosition);
         int toIndex = fixPosition(toPosition);
         TLRPC.Dialog fromDialog = dialogs.get(fromIndex);
         TLRPC.Dialog toDialog = dialogs.get(toIndex);
-        // Client-side pins have no server pinnedNum: their order lives in NekoConfig only.
-        if (NekoConfig.areBothLocalPins(fromDialog.id, toDialog.id)) {
-            NekoConfig.swapLocalPins(fromDialog.id, toDialog.id);
-        } else if (dialogsType == 7 || dialogsType == 8) {
-            MessagesController.DialogFilter filter = MessagesController.getInstance(currentAccount).selectedDialogFilter[dialogsType == 8 ? 1 : 0];
-            int idx1 = filter.pinnedDialogs.get(fromDialog.id);
-            int idx2 = filter.pinnedDialogs.get(toDialog.id);
-            filter.pinnedDialogs.put(fromDialog.id, idx2);
-            filter.pinnedDialogs.put(toDialog.id, idx1);
-        } else if (!NekoConfig.isLocalPin(fromDialog.id) && !NekoConfig.isLocalPin(toDialog.id)) {
-            int oldNum = fromDialog.pinnedNum;
-            fromDialog.pinnedNum = toDialog.pinnedNum;
-            toDialog.pinnedNum = oldNum;
-        } else {
-            // One of the two is a local pin — don't touch server pinned numbers at all.
+        final boolean fromServer = isServerPinned(fromDialog);
+        final boolean toServer = isServerPinned(toDialog);
+        final boolean fromPinned = fromServer || NekoConfig.isLocalPin(fromDialog.id);
+        final boolean toPinned = toServer || NekoConfig.isLocalPin(toDialog.id);
+        if (!fromPinned || !toPinned) {
             updateList(null);
             return;
+        }
+        // The visible order of the pinned block is stored locally, so it works for real pins and
+        // for client-side pins alike (including dragging one across the boundary between them).
+        NekoConfig.swapPinOrder(fromDialog.id, toDialog.id);
+        if (fromServer && toServer) {
+            // Both are real pins: also swap the server order so it stays consistent.
+            if (dialogsType == 7 || dialogsType == 8) {
+                MessagesController.DialogFilter filter = MessagesController.getInstance(currentAccount).selectedDialogFilter[dialogsType == 8 ? 1 : 0];
+                int idx1 = filter.pinnedDialogs.get(fromDialog.id);
+                int idx2 = filter.pinnedDialogs.get(toDialog.id);
+                filter.pinnedDialogs.put(fromDialog.id, idx2);
+                filter.pinnedDialogs.put(toDialog.id, idx1);
+            } else {
+                int oldNum = fromDialog.pinnedNum;
+                fromDialog.pinnedNum = toDialog.pinnedNum;
+                toDialog.pinnedNum = oldNum;
+            }
         }
         Collections.swap(dialogs, fromIndex, toIndex);
         updateList(null);

@@ -489,7 +489,7 @@ public class MainTabsLayout extends AnimatedLinearLayout {
 
         @Override
         public boolean needLongPress(float x, float y) {
-            return true;
+            return NekoConfig.allowTabsReorder;
         }
 
         @Override
@@ -500,6 +500,9 @@ public class MainTabsLayout extends AnimatedLinearLayout {
 
         @Override
         public boolean onLongPressRequestedAt(View view, float x, float y) {
+            if (!NekoConfig.allowTabsReorder) {
+                return false;
+            }
             checkPivot(view, x, y);
             isInLongPress = true;
             orderDragView = findChildUnder(MainTabsLayout.this, x, y);
@@ -514,6 +517,12 @@ public class MainTabsLayout extends AnimatedLinearLayout {
 
         @Override
         public void onLongPressMove(View view, MotionEvent e, float x, float y, float startX, float startY) {
+            if (!NekoConfig.allowTabsReorder) {
+                // Настройку выключили во время жеста — прекращаем перетаскивание.
+                orderMoved = false;
+                orderDragView = null;
+                return;
+            }
             checkPivot(view, x, y);
             if (orderDragView != null) {
                 final View nearest = findNearestVisibleChildByX(x, MainTabsLayout.this);
@@ -674,6 +683,13 @@ public class MainTabsLayout extends AnimatedLinearLayout {
                 dragHandler.postDelayed(longPressRunnable, 380);
             }
         } else if (action == MotionEvent.ACTION_MOVE) {
+            if (dragDetected && !NekoConfig.allowTabsReorder) {
+                // Опцию выключили прямо во время жеста — немедленно прекращаем перетаскивание.
+                dragDetected = false;
+                draggedView = null;
+                dragHandler.removeCallbacks(longPressRunnable);
+                return super.dispatchTouchEvent(ev);
+            }
             if (!dragDetected) {
                 if (Math.hypot(ev.getX() - downX, ev.getY() - downY) > dp(10)) {
                     dragHandler.removeCallbacks(longPressRunnable);
@@ -708,6 +724,12 @@ public class MainTabsLayout extends AnimatedLinearLayout {
     private View draggedView;
     private float downX, downY;
     private final Runnable longPressRunnable = () -> {
+        if (!NekoConfig.allowTabsReorder) {
+            // Настройка могла быть выключена после того, как ACTION_DOWN уже поставил задачу.
+            dragDetected = false;
+            draggedView = null;
+            return;
+        }
         dragDetected = true;
         draggedView = findChildUnder(MainTabsLayout.this, downX, downY);
     };

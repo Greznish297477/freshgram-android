@@ -1219,6 +1219,25 @@ public class NekoConfig {
     }
 
     /**
+     * Swaps the display order of two client-side pins (drag & drop in the chat list).
+     * Does nothing unless both chats are locally pinned.
+     */
+    public static void swapLocalPins(long firstId, long secondId) {
+        int first = localPins.indexOf(firstId);
+        int second = localPins.indexOf(secondId);
+        if (first < 0 || second < 0 || first == second) {
+            return;
+        }
+        localPins.set(first, secondId);
+        localPins.set(second, firstId);
+        saveLocalPins();
+    }
+
+    public static boolean areBothLocalPins(long firstId, long secondId) {
+        return localPins.contains(firstId) && localPins.contains(secondId);
+    }
+
+    /**
      * Drops local pins for chats that are no longer in the dialog list (deleted/left) so the stored
      * list does not grow forever.
      */

@@ -3333,11 +3333,17 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                         markUnread = dialog.unread_mark;
                         currentEditDate = message != null ? message.messageOwner.edit_date : 0;
                         lastMessageDate = dialog.last_message_date;
+                        final boolean wasDrawPin = drawPin;
                         if (dialogsType == 7 || dialogsType == 8) {
                             MessagesController.DialogFilter filter = MessagesController.getInstance(currentAccount).selectedDialogFilter[dialogsType == 8 ? 1 : 0];
                             drawPin = filter != null && filter.pinnedDialogs.indexOfKey(dialog.id) >= 0 || NekoConfig.isLocalPin(dialog.id);
                         } else {
                             drawPin = currentDialogFolderId == 0 && (dialog.pinned || NekoConfig.isLocalPin(dialog.id));
+                        }
+                        if (wasDrawPin != drawPin) {
+                            // The pin badge reserves extra width next to the time, so the layout must be rebuilt.
+                            rebuildLayout = true;
+                            requestLayout = true;
                         }
                         if (message != null) {
                             lastSendState = message.messageOwner.send_state;

@@ -2457,7 +2457,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 long dialogId = dialogCell.getDialogId();
                 if (actionBar.isActionModeShowed(null)) {
                     TLRPC.Dialog dialog = getMessagesController().dialogs_dict.get(dialogId);
-                    if (!allowMoving || dialog == null || !isDialogPinned(dialog) || DialogObject.isFolderDialogId(dialogId)) {
+                    if (!allowMoving || dialog == null || (!isDialogPinned(dialog) && !NekoConfig.isLocalPin(dialogId)) || DialogObject.isFolderDialogId(dialogId)) {
                         return 0;
                     }
                     movingView = (DialogCell) viewHolder.itemView;
@@ -2503,7 +2503,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             DialogCell dialogCell = (DialogCell) target.itemView;
             long dialogId = dialogCell.getDialogId();
             TLRPC.Dialog dialog = getMessagesController().dialogs_dict.get(dialogId);
-            if (dialog == null || !isDialogPinned(dialog) || DialogObject.isFolderDialogId(dialogId)) {
+            if (dialog == null || (!isDialogPinned(dialog) && !NekoConfig.isLocalPin(dialogId)) || DialogObject.isFolderDialogId(dialogId)) {
                 return false;
             }
             int fromIndex = source.getAdapterPosition();
@@ -9273,7 +9273,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             if (dialog instanceof TLRPC.TL_dialogFolder) {
                 continue;
             }
-            if (isDialogPinned(dialog)) {
+            if (isDialogPinned(dialog) || NekoConfig.isLocalPin(dialog.id)) {
                 pinnedCount++;
             } else if (!getMessagesController().isPromoDialog(dialog.id, false)) {
                 break;

@@ -80,6 +80,8 @@ import org.telegram.ui.Stories.StoriesController;
 import org.telegram.ui.Stories.StoriesListPlaceProvider;
 import org.telegram.ui.community.CommunityUtils;
 
+import tw.nekomimi.nekogram.NekoConfig;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -364,9 +366,9 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
             if (dialog != null) {
                 if (dialogsType == 7 || dialogsType == 8) {
                     MessagesController.DialogFilter filter = MessagesController.getInstance(currentAccount).selectedDialogFilter[dialogsType == 8 ? 1 : 0];
-                    pinned = filter != null && filter.pinnedDialogs.indexOfKey(dialog.id) >= 0;
+                    pinned = filter != null && filter.pinnedDialogs.indexOfKey(dialog.id) >= 0 || NekoConfig.isLocalPin(dialog.id);
                 } else {
-                    pinned = dialog.pinned;
+                    pinned = dialog.pinned || NekoConfig.isLocalPin(dialog.id);
                 }
                 isFolder = dialog.isFolder;
                 isForumCell = MessagesController.getInstance(currentAccount).isForum(dialog.id);
@@ -1214,16 +1216,23 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
         int toIndex = fixPosition(toPosition);
         TLRPC.Dialog fromDialog = dialogs.get(fromIndex);
         TLRPC.Dialog toDialog = dialogs.get(toIndex);
-        if (dialogsType == 7 || dialogsType == 8) {
+        // Client-side pins have no server pinnedNum: their order lives in NekoConfig only.
+        if (NekoConfig.areBothLocalPins(fromDialog.id, toDialog.id)) {
+            NekoConfig.swapLocalPins(fromDialog.id, toDialog.id);
+        } else if (dialogsType == 7 || dialogsType == 8) {
             MessagesController.DialogFilter filter = MessagesController.getInstance(currentAccount).selectedDialogFilter[dialogsType == 8 ? 1 : 0];
             int idx1 = filter.pinnedDialogs.get(fromDialog.id);
             int idx2 = filter.pinnedDialogs.get(toDialog.id);
             filter.pinnedDialogs.put(fromDialog.id, idx2);
             filter.pinnedDialogs.put(toDialog.id, idx1);
-        } else {
+        } else if (!NekoConfig.isLocalPin(fromDialog.id) && !NekoConfig.isLocalPin(toDialog.id)) {
             int oldNum = fromDialog.pinnedNum;
             fromDialog.pinnedNum = toDialog.pinnedNum;
             toDialog.pinnedNum = oldNum;
+        } else {
+            // One of the two is a local pin — don't touch server pinned numbers at all.
+            updateList(null);
+            return;
         }
         Collections.swap(dialogs, fromIndex, toIndex);
         updateList(null);
